@@ -1,4 +1,4 @@
-package interpreter;
+package interpreter.src;
 
 public class Main {
     public static void main(String[] args) {
