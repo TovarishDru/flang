@@ -1,11 +1,11 @@
 # A Java Interpreter for the F language
 
-## ⚙️ Требования
+## ⚙️ Requirements
 - Java JDK 11+
 - GNU Make
 
-## 🚀 Запуск
-Скомпилировать и запустить с тестовым файлом:
+## 🚀 Launch
+Compile and run with a defualt test file:
 
 ```bash
 make run
