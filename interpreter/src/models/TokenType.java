@@ -1,8 +1,66 @@
-public enum TokenType {
-    DEFAULT;
-    // enumeration of all supported token types
+package models;
 
-    public static TokenType fromString(String type) {
-        return DEFAULT;
-    }
+public enum TokenType {
+    LPAREN,
+    RPAREN,
+    ASSIGN,
+    SEMICOLON,
+    DOT,
+
+    FUNC,
+    LAMBDA,
+    WHILE,
+    FOR,
+    RANGE,
+    RETURN,
+    BREAK,
+    CONTINUE,
+    IF,
+    ELSE,
+    ELSEIF,
+
+    PLUS,
+    MINUS,
+    TIMES,
+    DIVIDE,
+    MODULO,
+    POWER,
+    INC,
+    DEC,
+
+    INTEGER,
+    REAL,
+    BOOLEAN,
+    STRING,
+    CHAR,
+    NULL,
+
+    EQUAL,
+    NON_EQUAL,
+    LESS,
+    LESS_EQUAL,
+    GREATER,
+    GREATER_EQUAL,
+
+    IS_INT,
+    IS_REAL,
+    IS_BOOLEAN,
+    IS_STRING,
+    IS_CHAR,
+    IS_NULL,
+
+    AND,
+    OR,
+    XOR,
+    NOT,
+
+    LIST,
+    DICT,
+    OBJECT,
+    APPEND,
+
+    COMMENT,
+    IDENTIFIER,
+    ERROR,
+    EOF,
 }
