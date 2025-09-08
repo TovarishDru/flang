@@ -1,5 +1,3 @@
-
-
 public enum TokenType {
     DEFAULT;
     // enumeration of all supported token types
