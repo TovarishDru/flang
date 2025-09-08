@@ -1,7 +1,10 @@
 package interpreter.src.models;
 
 public enum TokenType {
+    DEFAULT;
     // enumeration of all supported token types
 
-    // method to convert a string to TokenType needed
+    public static TokenType fromString(String type) {
+        return DEFAULT;
+    }
 }
