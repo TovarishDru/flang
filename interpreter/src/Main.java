@@ -1,11 +1,6 @@
-package interpreter.src;
-
 import java.util.ArrayList;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import interpreter.src.stages.Lexer;
-import interpreter.src.models.Token;
 
 public class Main {
     public static void main(String[] args) {
@@ -23,6 +18,7 @@ public class Main {
     }
 
     private static void writeTokens(ArrayList<Token> tokens) {
+        System.out.println("The pasring result is:");
         int prevLine = -1;
         for (int i = 0; i < tokens.size(); i++) {
             Token token = tokens.get(i);
@@ -32,7 +28,7 @@ public class Main {
             if (i != tokens.size() - 1) {
                 System.out.println(token.getType() + "(" + token.getValue() + ") ");
             } else {
-                 System.out.println(token.getType() + "(" + token.getValue() + ")");
+                System.out.println(token.getType() + "(" + token.getValue() + ")");
             }
         }
     }

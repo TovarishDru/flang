@@ -1,4 +1,4 @@
-package interpreter.src.models;
+
 
 public class Token {
     private TokenType type;

@@ -1,9 +1,4 @@
-package interpreter.src.stages;
-
 import java.util.ArrayList;
-
-import interpreter.src.models.Token;
-import interpreter.src.models.TokenType;
 
 public class Lexer {
     private ArrayList<Token> tokens;

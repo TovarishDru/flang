@@ -1,4 +1,4 @@
-package interpreter.src.models;
+
 
 public enum TokenType {
     DEFAULT;
