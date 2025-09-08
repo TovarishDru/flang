@@ -34,7 +34,6 @@ public class Main {
             } else {
                  System.out.println(token.getType() + "(" + token.getValue() + ")");
             }
-            
         }
     }
 }
