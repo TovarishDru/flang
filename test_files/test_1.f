@@ -2,13 +2,13 @@
 x
 
 
-(setq  y '(plus 1 2))
+(setq  y '(plus -1.35 2.15))
 (eval y)
 
 (func  square (n) (times n n))
 (square 5)
 
-((lambda (a b) (plus a b)) 5 7)
+((lambda (a b) (plus a b)) 55 -176)
 
 (prog (a b) (setq a 5) (setq b 6) (plus a b))
 
