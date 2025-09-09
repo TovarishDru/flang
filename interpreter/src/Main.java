@@ -23,16 +23,32 @@ public class Main {
     private static void writeTokens(ArrayList<Token> tokens) {
         System.out.println("The parsing result is:");
         int prevLine = -1;
+        StringBuilder lineBuilder = new StringBuilder();
+
         for (int i = 0; i < tokens.size(); i++) {
             Token token = tokens.get(i);
-            if (token.getLine() != prevLine && prevLine > 0) {
-                System.out.println();
+
+            if (token.getLine() != prevLine && prevLine != -1) {
+                System.out.println(lineBuilder.toString().trim());
+                lineBuilder.setLength(0);
             }
-            if (i != tokens.size() - 1) {
-                System.out.println(token.getType() + "(" + token.getValue() + ") ");
-            } else {
-                System.out.println(token.getType() + "(" + token.getValue() + ")");
+
+            String value = token.getValue();
+            if ("\n".equals(value)) {
+                value = "\\n";
             }
+
+            lineBuilder.append(token.getType())
+                    .append("(")
+                    .append(value)
+                    .append(") ");
+
+            prevLine = token.getLine();
+        }
+
+        if (lineBuilder.length() > 0) {
+            System.out.println(lineBuilder.toString().trim());
         }
     }
+
 }

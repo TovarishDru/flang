@@ -29,10 +29,11 @@ public class Lexer {
             char cur = input.charAt(pos);
 
             if (cur == '(' || cur == ')' || cur == '\'' || cur == '\n') {
-                String curString = String.valueOf(cur);
-                tokens.add(new Token(TokenType.fromString(curString), curString, line));
                 if (cur == '\n') {
                     line++;
+                } else {
+                    String curString = String.valueOf(cur);
+                    tokens.add(new Token(TokenType.fromString(curString), curString, line));
                 }
                 pos++;
             } else {
