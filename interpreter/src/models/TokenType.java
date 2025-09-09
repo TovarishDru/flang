@@ -137,6 +137,18 @@ public enum TokenType {
         if (operators.containsKey(s)) {
             return operators.get(s);
         }
+        if (s.matches("^-?\\d+$")) {
+            return INTEGER;
+        }
+        if (s.matches("^-?\\d+\\.\\d+$")) {
+            return REAL;
+        }
+        if (s.startsWith("\"") && s.endsWith("\"")) {
+            return STRING;
+        }
+        if (s.startsWith("'") && s.endsWith("'") && s.length() == 3) {
+            return CHAR;
+        }
         return IDENTIFIER;
     }
 }
