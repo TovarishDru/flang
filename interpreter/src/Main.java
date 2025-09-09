@@ -21,7 +21,7 @@ public class Main {
     }
 
     private static void writeTokens(ArrayList<Token> tokens) {
-        System.out.println("The pasring result is:");
+        System.out.println("The parsing result is:");
         int prevLine = -1;
         for (int i = 0; i < tokens.size(); i++) {
             Token token = tokens.get(i);
