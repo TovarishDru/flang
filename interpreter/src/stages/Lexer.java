@@ -1,3 +1,8 @@
+package stages;
+
+import models.Token;
+import models.TokenType;
+
 import java.util.ArrayList;
 
 public class Lexer {
