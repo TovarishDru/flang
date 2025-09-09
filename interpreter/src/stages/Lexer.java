@@ -17,7 +17,7 @@ public class Lexer {
         pos = 0;
         line = 0;
         length = input.length();
-        tokens = new ArrayList<Token>();
+        tokens = new ArrayList<>();
     }
 
     public ArrayList<Token> getTokens() {
@@ -29,9 +29,11 @@ public class Lexer {
             char cur = input.charAt(pos);
 
             if (cur == '(' || cur == ')' || cur == '\'' || cur == '\n') {
-                String curString = String.valueOf(cur); 
+                String curString = String.valueOf(cur);
                 tokens.add(new Token(TokenType.fromString(curString), curString, line));
-                line += (cur == '\n') ? 1 : 0;
+                if (cur == '\n') {
+                    line++;
+                }
                 pos++;
             } else {
                 if (Character.isWhitespace(cur)) {
@@ -41,7 +43,7 @@ public class Lexer {
                 } else if (Character.isLetter(cur)) {
                     tokens.add(parseKeyword());
                 } else {
-                    throw new Exception("Unkonwn character " + cur + " at line " + line);
+                    throw new Exception("Unknown character '" + cur + "' at line " + line);
                 }
             }
         }
@@ -49,13 +51,15 @@ public class Lexer {
 
     private Token parseKeyword() {
         StringBuilder builder = new StringBuilder();
-        char cur = input.charAt(pos);
-        while (pos < length && (Character.isLetterOrDigit(cur) || cur == '_')) {
-            builder.append(cur);
-            pos++;
-            cur = input.charAt(cur);
+        while (pos < length) {
+            char cur = input.charAt(pos);
+            if (Character.isLetterOrDigit(cur) || cur == '_') {
+                builder.append(cur);
+                pos++;
+            } else {
+                break;
+            }
         }
-
         String keyword = builder.toString();
         return new Token(TokenType.fromString(keyword), keyword, line);
     }
@@ -63,21 +67,23 @@ public class Lexer {
     private Token parseNumber() throws Exception {
         StringBuilder builder = new StringBuilder();
 
-        char cur = input.charAt(pos);
-        while (pos < length && (Character.isDigit(cur) || cur == '.' || cur == '-'|| cur == '+')) {
-            if (cur != '+') {
-                builder.append(cur);
+        while (pos < length) {
+            char cur = input.charAt(pos);
+            if (Character.isDigit(cur) || cur == '.' || cur == '-' || cur == '+') {
+                if (cur != '+') {
+                    builder.append(cur);
+                }
+                pos++;
+            } else {
+                break;
             }
-            pos++;
-            cur = input.charAt(pos);
         }
 
-        if (Character.isLetter(cur)) {
-            throw new Exception("Unexpected character " + cur + " at line " + line);
+        if (pos < length && Character.isLetter(input.charAt(pos))) {
+            throw new Exception("Unexpected character '" + input.charAt(pos) + "' at line " + line);
         }
 
-        String keyword = builder.toString();
-
-        return new Token(TokenType.fromString(keyword), keyword, line);
+        String numberString = builder.toString();
+        return new Token(TokenType.fromString(numberString), numberString, line);
     }
 }
