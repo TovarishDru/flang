@@ -1,3 +1,6 @@
+import models.Token;
+import stages.Lexer;
+
 import java.util.ArrayList;
 import java.nio.file.Files;
 import java.nio.file.Paths;
