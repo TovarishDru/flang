@@ -13,15 +13,15 @@ public class Main {
                 Lexer lexer = new Lexer(content);
                 lexer.parseTokens();
                 ArrayList<Token> tokens = lexer.getTokens();
-                writeTokens(tokens);
+                writeTokens(tokens, args[i]);
             } catch (Exception e) {
                 System.out.println("Error while processing file " + args[i] + ": " + e.toString());
             }
         }
     }
 
-    private static void writeTokens(ArrayList<Token> tokens) {
-        System.out.println("The parsing result is:");
+    private static void writeTokens(ArrayList<Token> tokens, String fileName) {
+        System.out.println("The parsing result for file " + fileName + " is:");
         int prevLine = -1;
         StringBuilder lineBuilder = new StringBuilder();
 
