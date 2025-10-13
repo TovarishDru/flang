@@ -2,7 +2,7 @@
 x
 
 
-(setq  y '(plus -1.35.5 2.15))
+(setq  y '(plus -1.35 2.15))
 (eval y)
 
 (func  square (n) (times n n))

@@ -1,7 +1,7 @@
 package stages;
 
-import models.Token;
-import models.TokenType;
+import models.token.Token;
+import models.token.TokenType;
 
 import java.util.ArrayList;
 

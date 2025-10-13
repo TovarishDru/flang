@@ -1,4 +1,4 @@
-package models;
+package models.token;
 
 public class Token {
     private TokenType type;

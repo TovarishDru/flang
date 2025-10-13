@@ -1,4 +1,4 @@
-package models;
+package models.token;
 
 import java.util.HashMap;
 import java.util.Map;

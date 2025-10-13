@@ -1,4 +1,4 @@
-import models.Token;
+import models.token.Token;
 import stages.Lexer;
 
 import java.util.ArrayList;
