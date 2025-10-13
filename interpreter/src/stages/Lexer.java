@@ -68,16 +68,23 @@ public class Lexer {
     private Token parseNumber() throws Exception {
         StringBuilder builder = new StringBuilder();
 
+        boolean isFloat = false;
+
         while (pos < length) {
             char cur = input.charAt(pos);
-            if (Character.isDigit(cur) || cur == '.' || cur == '-' || cur == '+') {
+
+            if (Character.isDigit(cur) || cur == '-' || cur == '+') {
                 if (cur != '+') {
                     builder.append(cur);
                 }
-                pos++;
+            }
+            else if (cur == '.' && !isFloat) {
+                isFloat = true;
+                builder.append(cur);
             } else {
                 break;
             }
+            pos++;
         }
 
         if (pos < length && Character.isLetter(input.charAt(pos))) {
