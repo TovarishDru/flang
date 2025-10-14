@@ -53,25 +53,10 @@ public class Parser {
         return switch (curToken.getType()) {
             case LPAREN -> parseParenthesizedExpr();
             case QUOTE -> parseQuoteWithoutBrackets();
-            case INTEGER -> {
+            case INTEGER, REAL, NULL, BOOLEAN -> {
                 advance();
-                AstNode intNode = new LiteralNode(curToken);
-                yield intNode;
-            }
-            case REAL -> {
-                advance();
-                AstNode realNode = new LiteralNode(curToken);
-                yield realNode;
-            }
-            case NULL -> {
-                advance();
-                AstNode nullNode = new LiteralNode(curToken);
-                yield nullNode;
-            }
-            case BOOLEAN -> {
-                advance();
-                AstNode boolNode = new LiteralNode(curToken);
-                yield boolNode;
+                AstNode literalNode = new LiteralNode(curToken);
+                yield literalNode;
             }
             case ATOM -> {
                 advance();
