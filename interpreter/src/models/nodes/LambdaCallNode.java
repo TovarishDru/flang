@@ -4,11 +4,11 @@ import java.util.ArrayList;
 
 public class LambdaCallNode extends AstNode {
     private String lambdaName;
-	private ArrayList<ASTNode> parameters;
+	private ArrayList<AstNode> parameters;
 
-    public LambdaCallNode(LambdaNode node) {
-        this.lambdaName = node.getLambdaName();
-        this.parameters = node.getParameters();
+    public LambdaCallNode(String lambdaName, ArrayList<AstNode> parameters) {
+        this.lambdaName = lambdaName;
+        this.parameters = parameters;
         super(NodeType.LAMBDACALL, null, null);
     }
     

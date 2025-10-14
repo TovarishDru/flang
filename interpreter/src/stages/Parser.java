@@ -95,9 +95,9 @@ public class Parser {
         } else if (operatorToken.getType() == TokenType.ATOM) {
             String operatorValue = operatorToken.getValue();
             if (globalScope.defined(operatorValue) && globalScope.find(operatorValue).getType() == NodeType.FUNC) {
-                return parseFuncCall(operatorValue);
+                return parseFuncCall();
             } else if (globalScope.defined(operatorValue) && globalScope.find(operatorValue).getType() == NodeType.LAMBDA) {
-                return parseLambdaCall(operatorValue);
+                return parseLambdaCall();
             } else {
                 return parseLiteralList();
             }
@@ -127,20 +127,43 @@ public class Parser {
         };
     }
 
-    private AstNode parseQuoteWithoutBrackets() {
-        return new AtomNode(peek());
+    private AstNode parseQuoteWithoutBrackets() throws Exception {
+        Token quoteToken = advance();
+        AstNode quotedExpr = parseNode();
+        AstNode quotedNode = new QuoteNode(quotedExpr);
+        quotedNode.addChild(quotedExpr);
+        return quotedNode;
     }
     
-    private AstNode parseComparison() {
-        return new AtomNode(peek());
+    private AstNode parseComparison() throws Exception {
+        Token opertator = advance();
+        AstNode leftElement = parseNode();
+        AstNode rightElement = parseNode();
+        consume(TokenType.RPAREN);
+
+        return new ComparisonNode(opertator, leftElement, rightElement);
     }
 
-    private AstNode parseOperation() {
-        return new AtomNode(peek());
+    private AstNode parseOperation() throws Exception {
+        Token operatorToken = advance();
+        String operator = operatorToken.getValue();
+        ArrayList<AstNode> operands = new ArrayList<>();
+
+        while (!check(TokenType.RPAREN)) {
+            AstNode expr = parseNode();
+            operands.add(expr);
+        }
+        consume(TokenType.RPAREN);
+
+        if (operands.size() < 2 && !(operator.equals("plus") || operator.equals("minus"))) {
+            throw new Exception("ERROR: IMPOSSIBLE OPERATION at line: " + operatorToken.getLine());
+        }
+        AstNode operatorNode = new OperationNode(operatorToken, operands);
+        return operatorNode;
     }
 
     private AstNode parseLiteralList() {
-        List<AstNode> elements = new ArrayList<>();
+        ArrayList<AstNode> elements = new ArrayList<>();
 
         while (!check(TokenType.RPAREN)) {
             elements.add(parseNode());
@@ -159,12 +182,12 @@ public class Parser {
             throw new Exception("ERROR: UNDEFINED FUNCTION " + functionName + " at line " + line);
         }
 
-        AstNode functionNode = globalScope.find(functionName);
+        FunctionNode functionNode = (FunctionNode) globalScope.find(functionName);
         if (functionNode.getType() != NodeType.FUNC) {
             throw new Exception("ERROR: " + functionName + " IS NOT A FUNCTION at line: " + line);
         }
 
-        List<AstNode> operands = new ArrayList<>();
+        ArrayList<AstNode> operands = new ArrayList<>();
         advance();
 
         while (!check(TokenType.RPAREN)) {
@@ -181,24 +204,24 @@ public class Parser {
         }
 
         consume(TokenType.RPAREN);
-        return new FunctionCallNode(functionNode);
+        return new FunctionCallNode(functionName, operands);
     }
 
     private AstNode parseLambdaCall() {
         String lambdaName = peek().getValue();
-        int line = peek().line;
+        int line = peek().getLine();
 
         if (!globalScope.defined(lambdaName)) {
             throw new Exception("ERROR: UNDEFINED LAMBDA " + lambdaName + " at line: " + line);
         }
         AstNode lambdaNode = globalScope.find(lambdaName);
 
-        List<AstNode> operands = new ArrayList<>();
+        ArrayList<AstNode> operands = new ArrayList<>();
         while (!check(TokenType.RPAREN)) {
             operands.add(parseNode());
         }
 
         consume(TokenType.RPAREN);
-        return new LambdaCallNode(lambdaNode);
+        return new LambdaCallNode(lambdaName, operands);
     }
 }

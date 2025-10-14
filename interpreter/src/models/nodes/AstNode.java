@@ -18,4 +18,8 @@ public abstract class AstNode {
     public NodeType getType() {
         return type;
     }
+
+    public void addChild(AstNode child) {
+        children.add(child);
+    }
 }

@@ -1,6 +1,6 @@
 package models.nodes;
 
-import java.utils.ArrayList;
+import java.util.ArrayList;
 
 import models.nodes.FunctionNode;
 import models.nodes.NodeType;
@@ -9,9 +9,9 @@ public class FunctionCallNode extends AstNode {
     String functionName;
 	ArrayList<AstNode> parameters;
 
-    public FunctionCallNode(FunctionNode node) {
-		this.functionName = node.getFunctionName();
-		this.parameters = node.getParameters();
+    public FunctionCallNode(String functionName, ArrayList<AstNode> parameters) {
+		this.functionName = functionName;
+		this.parameters = parameters;
         super(NodeType.FUNCCALL, null, null);
 	}
 
@@ -19,7 +19,7 @@ public class FunctionCallNode extends AstNode {
 		return functionName;
 	}
 
-	public ArrayList<ASTNode> getParameters() {
+	public ArrayList<AstNode> getParameters() {
 		return parameters;
 	}
 }

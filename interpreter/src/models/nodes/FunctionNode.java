@@ -1,6 +1,6 @@
 package models.nodes;
 
-import java.utils.ArrayList;
+import java.util.ArrayList;
 
 public class FunctionNode extends AstNode {
     String functionName;
