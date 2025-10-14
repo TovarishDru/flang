@@ -14,4 +14,8 @@ public abstract class AstNode {
         this.parent = parent;
         this.children = children;
     }
+
+    public NodeType getType() {
+        return type;
+    }
 }
