@@ -1,0 +1,31 @@
+package models.nodes;
+
+public enum NodeType {
+	ASSIGNMENT,
+	ATOM,
+	BOOL,
+	BREAK,
+	COMP,
+	COND,
+	CONS,
+	EVAL,
+	FUNC,
+	FUNCCALL,
+	HEAD,
+	LAMBDA,
+	LAMBDACALL,
+	LIST,
+	LITERAL,
+	LOGICALOP,
+	NOT,
+	NULL,
+	OPERATION,
+	PREDICATE,
+	PROG,
+	QUOTE,
+	RETURN,
+	SIGN,
+	TAIL,
+	WHILE,
+	VOID
+}

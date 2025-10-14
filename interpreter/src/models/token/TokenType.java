@@ -62,7 +62,7 @@ public enum TokenType {
     NULL,
 
     // General identifiers
-    IDENTIFIER;
+    ATOM;
 
     private static final Map<String, TokenType> keywords = new HashMap<>();
     static {
@@ -134,6 +134,6 @@ public enum TokenType {
         if (s.matches("^-?\\d+\\.\\d+$")) {
             return REAL;
         }
-        return IDENTIFIER;
+        return ATOM;
     }
 }
