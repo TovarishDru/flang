@@ -19,4 +19,9 @@ public class LambdaNode extends AstNode {
 	public AstNode getBody() {
 		return body;
 	}
+
+    @Override
+    public String toString() {
+        return "QuoteNode(" + quotedExpr.toString() + ")";
+    }
 }

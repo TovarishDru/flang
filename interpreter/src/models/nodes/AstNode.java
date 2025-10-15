@@ -22,4 +22,9 @@ public abstract class AstNode {
     public void addChild(AstNode child) {
         children.add(child);
     }
+
+    @Override
+    public String toString() {
+        return "AstNode()";
+    }
 }

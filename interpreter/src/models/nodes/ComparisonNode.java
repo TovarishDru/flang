@@ -27,4 +27,10 @@ public class ComparisonNode extends AstNode {
 	public AstNode getRightElement() {
 		return rightElement;
 	}
+
+	@Override
+    public String toString() {
+        return "ComparisonNode(" + comparison + ":left=" + 
+							leftElement.toString() + ",right=" + rightElement.toString() + ")";
+    }
 }

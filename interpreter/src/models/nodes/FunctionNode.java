@@ -25,4 +25,11 @@ public class FunctionNode extends AstNode {
 	public AstNode getBody() {
 		return body;
 	}
+
+	@Override
+    public String toString() {
+		String stringParams = String.join(",", parameters);
+
+        return "FunctionNode(" + stringParams + ")";
+    }
 }
