@@ -82,9 +82,51 @@ public class Parser {
             }
             case LESS, LESSEQ, GREATER, GREATEREQ, EQUAL, NONEQUAL -> parseComparison();
             case PLUS, MINUS, TIMES, DIVIDE -> parseOperation();
-            default -> throw new Exception("ERROR: UNEXPECTED TOKEN: " + curToken.getValue() + " at line " + curToken.getLine());
+            default ->
+                    throw new Exception("ERROR: UNEXPECTED TOKEN: " + curToken.getValue() + " at line " + curToken.getLine());
         };
     }
+
+    private AstNode parseQuoted() throws Exception {
+        if (check(TokenType.LPAREN)) {
+            return parseQuotedList();
+        }
+
+        Token t = advance();
+        switch (t.getType()) {
+            case INTEGER, REAL, NULL, BOOLEAN -> {
+                return new LiteralNode(t);
+            }
+
+            case ATOM,
+                 PLUS, MINUS, TIMES, DIVIDE,
+                 LESS, LESSEQ, GREATER, GREATEREQ, EQUAL, NONEQUAL, ISBOOL // TODO: add all types that we can quote
+                    -> {
+                return new AtomNode(t);
+            }
+
+            case QUOTE -> {
+                AstNode inner = parseQuoted();
+                return new QuoteNode(inner);
+            }
+
+            default -> throw new Exception(
+                    "ERROR: invalid token in quoted form: " + t.getValue() + " at line: " + t.getLine()
+            );
+        }
+    }
+
+    private AstNode parseQuotedList() throws Exception {
+        consume(TokenType.LPAREN);
+        ArrayList<AstNode> elements = new ArrayList<>();
+        while (!check(TokenType.RPAREN)) {
+            elements.add(parseQuoted());
+        }
+        consume(TokenType.RPAREN);
+        return new ListNode(elements);
+    }
+
+
 
     private AstNode parseParenthesizedExpr() throws Exception {
         consume(TokenType.LPAREN);
@@ -96,8 +138,6 @@ public class Parser {
             String operatorValue = operatorToken.getValue();
             if (globalScope.defined(operatorValue) && globalScope.find(operatorValue).getType() == NodeType.FUNC) {
                 return parseFuncCall();
-            } else if (globalScope.defined(operatorValue) && globalScope.find(operatorValue).getType() == NodeType.LAMBDA) {
-                return parseLambdaCall();
             } else {
                 return parseLiteralList();
             }
@@ -133,11 +173,16 @@ public class Parser {
     }
 
     private AstNode parseQuoteWithoutBrackets() throws Exception {
-        Token quoteToken = advance();
-        AstNode quotedExpr = parseNode();
-        AstNode quotedNode = new QuoteNode(quotedExpr);
-        quotedNode.addChild(quotedExpr);
-        return quotedNode;
+        advance(); // QUOTE (')
+        AstNode form = parseQuoted();
+        return new QuoteNode(form);
+    }
+
+    private AstNode parseQuote() throws Exception {
+        advance(); // "quote"
+        AstNode form = parseQuoted();
+        consume(TokenType.RPAREN);
+        return new QuoteNode(form);
     }
 
     private AstNode parseComparison() throws Exception {
@@ -187,47 +232,27 @@ public class Parser {
             throw new Exception("ERROR: UNDEFINED FUNCTION " + functionName + " at line " + line);
         }
 
-        FunctionNode functionNode = (FunctionNode) globalScope.find(functionName);
-        if (functionNode.getType() != NodeType.FUNC) {
+        AstNode fnNode = globalScope.find(functionName);
+        if (fnNode == null || fnNode.getType() != NodeType.FUNC) {
             throw new Exception("ERROR: " + functionName + " IS NOT A FUNCTION at line: " + line);
         }
+        FunctionNode functionNode = (FunctionNode) fnNode;
 
-        ArrayList<AstNode> operands = new ArrayList<>();
-        advance();
-
-        while (!check(TokenType.RPAREN)) {
-            AstNode expr = parseNode();
-            operands.add(expr);
-        }
-
-        int expectedParams = ((FunctionNode) functionNode).getParameters().size();
-
-        if (operands.size() != expectedParams) {
-            throw new Exception("ERROR: INCORRECT NUMBER OF PARAMETERS FOR FUNCTION " + functionName +
-                    "EXPECTED-GOT: " + expectedParams + "-" + operands.size() +
-                    " at line: " + line);
-        }
-
-        consume(TokenType.RPAREN);
-        return new FunctionCallNode(functionName, operands);
-    }
-
-    private AstNode parseLambdaCall() throws Exception{
-        String lambdaName = peek().getValue();
-        int line = peek().getLine();
-
-        if (!globalScope.defined(lambdaName)) {
-            throw new Exception("ERROR: UNDEFINED LAMBDA " + lambdaName + " at line: " + line);
-        }
-        AstNode lambdaNode = globalScope.find(lambdaName);
+        advance(); // consume name
 
         ArrayList<AstNode> operands = new ArrayList<>();
         while (!check(TokenType.RPAREN)) {
             operands.add(parseNode());
         }
 
+        int expectedParams = functionNode.getParameters() == null ? 0 : functionNode.getParameters().size();
+        if (operands.size() != expectedParams) {
+            throw new Exception("ERROR: INCORRECT NUMBER OF PARAMETERS FOR FUNCTION " + functionName +
+                    "EXPECTED-GOT: " + expectedParams + "-" + operands.size() + " at line: " + line);
+        }
+
         consume(TokenType.RPAREN);
-        return new FunctionCallNode(lambdaName, operands);
+        return new FunctionCallNode(functionName, operands);
     }
 
     private AstNode parseSETQ() throws Exception {
@@ -368,20 +393,12 @@ public class Parser {
         Token op = advance(); // isint|isreal|isbool|isnull|isatom|islist
         AstNode arg = parseNode();
         consume(TokenType.RPAREN);
-		if (op == null) {
-			throw new Exception("ERROR: Expected predicate parameter"); //TODO Check on test case and delete maybe
-		}
+        if (op == null) {
+            throw new Exception("ERROR: Expected predicate parameter"); //TODO Check on test case and delete maybe
+        }
         return new PredicateNode(op.getValue(), arg);
     }
 
-    private AstNode parseQuote() throws Exception {
-        advance();
-        AstNode quoted = parseNode();
-        consume(TokenType.RPAREN);
-        AstNode q = new QuoteNode(quoted);
-        q.addChild(quoted);
-        return q;
-    }
 
     private AstNode parseEval() throws Exception {
         advance();
