@@ -21,7 +21,7 @@ public class Parser {
 
     public AstNode parseAst() throws Exception {
         ArrayList<AstNode> instructions = new ArrayList<>();
-        
+
         while (tokenIndex <= tokens.size()) {
             AstNode instruction = parseNode();
             instructions.add(instruction);
@@ -39,7 +39,7 @@ public class Parser {
     private boolean isAtEnd() {
         return tokenIndex >= tokens.size();
     }
-    
+
     private Token advance() {
         if (!isAtEnd()) {
             return tokens.get(tokenIndex++);
@@ -52,7 +52,7 @@ public class Parser {
         return peek().getType() == type;
     }
 
-    private Token consume(TokenType type) {
+    private Token consume(TokenType type) throws Exception {
         if (check(type)) {
             return advance();
         }
@@ -134,7 +134,7 @@ public class Parser {
         quotedNode.addChild(quotedExpr);
         return quotedNode;
     }
-    
+
     private AstNode parseComparison() throws Exception {
         Token opertator = advance();
         AstNode leftElement = parseNode();
@@ -162,7 +162,7 @@ public class Parser {
         return operatorNode;
     }
 
-    private AstNode parseLiteralList() {
+    private AstNode parseLiteralList() throws Exception {
         ArrayList<AstNode> elements = new ArrayList<>();
 
         while (!check(TokenType.RPAREN)) {
@@ -177,7 +177,7 @@ public class Parser {
     private AstNode parseFuncCall() throws Exception {
         String functionName = peek().getValue();
         int line = peek().getLine();
-        
+
         if (!globalScope.defined(functionName)) {
             throw new Exception("ERROR: UNDEFINED FUNCTION " + functionName + " at line " + line);
         }
@@ -207,7 +207,7 @@ public class Parser {
         return new FunctionCallNode(functionName, operands);
     }
 
-    private AstNode parseLambdaCall() {
+    private AstNode parseLambdaCall() throws Exception{
         String lambdaName = peek().getValue();
         int line = peek().getLine();
 
@@ -223,5 +223,204 @@ public class Parser {
 
         consume(TokenType.RPAREN);
         return new LambdaCallNode(lambdaName, operands);
+    }
+
+    private AstNode parseSETQ() throws Exception {
+        advance();
+        String name = consume(TokenType.ATOM).getValue();
+        AstNode value = parseNode();
+        consume(TokenType.RPAREN);
+
+        localScope.define(name, value);
+
+        return new SetqNode(name, value);
+    }
+
+    private AstNode parseFUNC() throws Exception {
+        advance();
+
+        SymbolTable prev = localScope;
+        localScope = new SymbolTable(prev);
+
+        String functionName = consume(TokenType.ATOM).getValue();
+
+        FunctionNode placeholder = new FunctionNode(functionName, new ArrayList<>(), null);
+        globalScope.define(functionName, placeholder);
+        localScope.define(functionName, placeholder);
+
+        consume(TokenType.LPAREN);
+        ArrayList<String> params = new ArrayList<>();
+        while (!check(TokenType.RPAREN)) {
+            String p = consume(TokenType.ATOM).getValue();
+            params.add(p);
+            localScope.define(p, null);
+        }
+        consume(TokenType.RPAREN);
+
+        ArrayList<AstNode> bodyExprs = new ArrayList<>();
+        while (!check(TokenType.RPAREN)) {
+            bodyExprs.add(parseNode());
+        }
+        consume(TokenType.RPAREN);
+
+        AstNode body = new ProgNode(bodyExprs);
+
+        localScope = prev;
+
+        FunctionNode fn = new FunctionNode(functionName, params, body);
+
+        globalScope.define(functionName, fn);
+        localScope.define(functionName, fn);
+
+        return fn;
+    }
+
+    private AstNode parseCOND() throws Exception {
+        advance();
+
+        AstNode condition = parseNode();
+        AstNode action = parseNode();
+
+        AstNode defaultAction = null; // optional else
+        if (!check(TokenType.RPAREN)) {
+            defaultAction = parseNode();
+        }
+
+        consume(TokenType.RPAREN);
+        return new CondNode(condition, action, defaultAction);
+    }
+
+    private AstNode parsePROG() throws Exception {
+        advance();
+
+        SymbolTable prev = localScope;
+        localScope = new SymbolTable(prev);
+
+        consume(TokenType.LPAREN);
+        while (!check(TokenType.RPAREN)) {
+            String name = consume(TokenType.ATOM).getValue();
+            localScope.define(name, null);
+        }
+        consume(TokenType.RPAREN);
+
+        ArrayList<AstNode> statements = new ArrayList<>();
+        while (!check(TokenType.RPAREN)) {
+            statements.add(parseNode());
+        }
+        consume(TokenType.RPAREN);
+
+        localScope = prev;
+
+        return new ProgNode(statements);
+    }
+
+    private AstNode parseHeadOrTail(String which) throws Exception {
+        advance();
+        AstNode listExpr = parseNode();
+        consume(TokenType.RPAREN);
+
+        if ("head".equals(which)) {
+            return new HeadNode(listExpr);
+        } else {
+            return new TailNode(listExpr);
+        }
+    }
+
+    private AstNode parseCons() throws Exception {
+        advance();
+        AstNode item = parseNode();
+        AstNode list = parseNode();
+        consume(TokenType.RPAREN);
+        return new ConsNode(item, list);
+    }
+
+    private AstNode parseWHILE() throws Exception {
+        advance();
+        consume(TokenType.LPAREN);
+        AstNode condition = parseNode();
+        ArrayList<AstNode> body = new ArrayList<>();
+        while (!check(TokenType.RPAREN)) {
+            body.add(parseNode());
+        }
+        consume(TokenType.RPAREN);
+        return new WhileNode(condition, body);
+    }
+
+    private AstNode parseRETURN() throws Exception {
+        advance();
+        AstNode value = parseNode();
+        consume(TokenType.RPAREN);
+        return new ReturnNode(value);
+    }
+
+    private AstNode parseBREAK() throws Exception {
+        advance();
+        consume(TokenType.RPAREN);
+        return new BreakNode();
+    }
+
+    private AstNode parsePredicate() throws Exception {
+        Token op = advance(); // isint|isreal|isbool|isnull|isatom|islist
+        AstNode arg = parseNode();
+        consume(TokenType.RPAREN);
+		if (op == null) {
+			throw new Exception("ERROR: Expected predicate parameter"); //TODO Check on test case and delete maybe
+		}
+        return new PredicateNode(op.getValue(), arg);
+    }
+
+    private AstNode parseQuote() throws Exception {
+        advance();
+        AstNode quoted = parseNode();
+        consume(TokenType.RPAREN);
+        AstNode q = new QuoteNode(quoted);
+        q.addChild(quoted);
+        return q;
+    }
+
+    private AstNode parseEval() throws Exception {
+        advance();
+        AstNode expr = parseNode();
+        consume(TokenType.RPAREN);
+        return new EvalNode(expr);
+    }
+
+    private AstNode parseLogicalOperator() throws Exception {
+        Token op = advance();
+        AstNode left = parseNode();
+        AstNode right = parseNode();
+        consume(TokenType.RPAREN);
+        return new LogicalNode(op.getValue(), left, right);
+    }
+
+    private AstNode parseNot() throws Exception {
+        advance();
+        AstNode arg = parseNode();
+        consume(TokenType.RPAREN);
+        return new NotNode(arg);
+    }
+
+    private AstNode parseLambda() throws Exception {
+        advance();
+
+        SymbolTable prev = localScope;
+        localScope = new SymbolTable(prev);
+
+        ArrayList<String> params = new ArrayList<>();
+        consume(TokenType.LPAREN);
+        while (!check(TokenType.RPAREN)) {
+            String p = consume(TokenType.ATOM).getValue();
+            params.add(p);
+            localScope.define(p, null);
+        }
+        consume(TokenType.RPAREN);
+
+        AstNode body = parseNode();
+
+        consume(TokenType.RPAREN);
+
+        localScope = prev;
+
+        return new LambdaNode(params, body);
     }
 }

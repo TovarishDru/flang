@@ -27,5 +27,6 @@ public enum NodeType {
 	SIGN,
 	TAIL,
 	WHILE,
-	VOID
+	VOID,
+	SETQ,
 }
