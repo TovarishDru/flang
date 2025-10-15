@@ -57,7 +57,7 @@ public class Parser {
             return advance();
         }
         Token errToken = peek();
-        throw new Exception("Unexpected token type. FOUND: " + errToken + " at line: " + errToken.getLine());
+        throw new Exception("Unexpected token type. FOUND: " + errToken.getValue() + " at line: " + errToken.getLine());
     }
 
     private AstNode parseNode() throws Exception {
@@ -82,7 +82,7 @@ public class Parser {
             }
             case LESS, LESSEQ, GREATER, GREATEREQ, EQUAL, NONEQUAL -> parseComparison();
             case PLUS, MINUS, TIMES, DIVIDE -> parseOperation();
-            default -> throw new Exception("ERROR: UNEXPECTED TOKEN: " + curToken + " at line " + curToken.getLine());
+            default -> throw new Exception("ERROR: UNEXPECTED TOKEN: " + curToken.getValue() + " at line " + curToken.getLine());
         };
     }
 
@@ -121,6 +121,11 @@ public class Parser {
             case "not" -> parseNot();
             case "lambda" -> parseLambda();
             case ")" -> parseLiteralList();
+            case "(" -> {
+                AstNode node = parseParenthesizedExpr();
+                consume(TokenType.RPAREN);
+                yield node;
+            }
             case "quote" -> parseQuote();
             case "eval" -> parseEval();
             default -> parseFuncCall();

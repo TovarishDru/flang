@@ -8,8 +8,6 @@ x
 (func  square (n) (times n n))
 (square 5)
 
-((lambda (a b) (plus a b)) 55 -176)
-
 (prog (a b) (setq a 5) (setq b 6) (plus a b))
 
 (cond (less 3 5) 1 0)
