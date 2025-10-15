@@ -222,7 +222,7 @@ public class Parser {
         }
 
         consume(TokenType.RPAREN);
-        return new LambdaCallNode(lambdaName, operands);
+        return new FunctionCallNode(lambdaName, operands);
     }
 
     private AstNode parseSETQ() throws Exception {

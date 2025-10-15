@@ -18,7 +18,7 @@ public class ListNode extends AstNode {
 	@Override
     public String toString() {
         String elementsStr = elements.stream()
-				.map(element -> element.accept(this))
+				.map(element -> element.toString())
 				.collect(Collectors.joining(","));
 		return "ListNode(" + elementsStr + ")";
     }
