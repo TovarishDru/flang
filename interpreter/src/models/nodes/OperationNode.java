@@ -1,6 +1,7 @@
 package models.nodes;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import models.token.TokenType;
 import models.token.Token;
@@ -22,4 +23,12 @@ public class OperationNode extends AstNode {
 	public ArrayList<AstNode> getOperands() {
 		return operands;
 	}
+
+	@Override
+    public String toString() {
+        String operandsStr = operands.stream()
+				.map(operand -> operand.toString())
+				.collect(Collectors.joining(", "));
+		return "OperationNode(" + operator + ":" + operandsStr +")";
+    }
 }

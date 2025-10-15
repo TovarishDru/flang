@@ -12,4 +12,9 @@ public class LiteralNode extends AstNode {
         this.type = token.getType();
         super(NodeType.LITERAL, null, null);
     }
+
+    @Override
+    public String toString() {
+        return "LiteralNode(" + value + ")";
+    }
 }

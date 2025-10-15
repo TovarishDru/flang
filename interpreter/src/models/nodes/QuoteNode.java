@@ -11,4 +11,9 @@ public class QuoteNode extends AstNode {
 	public AstNode getQuotedExpr() {
 		return quotedExpr;
 	}
+
+	@Override
+    public String toString() {
+        return "QuoteNode(" + quotedExpr.toString() + ")";
+    }
 }
