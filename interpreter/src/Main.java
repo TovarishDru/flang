@@ -1,5 +1,6 @@
 import models.token.Token;
 import stages.Lexer;
+import stages.Parser;
 
 import java.util.ArrayList;
 import java.nio.file.Files;
@@ -10,10 +11,14 @@ public class Main {
         for (int i = 0; i < args.length; i++) {
             try {
                 String content = new String(Files.readAllBytes(Paths.get(args[i])));
+
                 Lexer lexer = new Lexer(content);
                 lexer.parseTokens();
                 ArrayList<Token> tokens = lexer.getTokens();
                 writeTokens(tokens, args[i]);
+
+                Parser parser = new Parser(tokens);
+                parser.parseAst();
             } catch (Exception e) {
                 System.out.println("Error while processing file " + args[i] + ": " + e.toString());
             }
