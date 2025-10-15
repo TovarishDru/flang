@@ -8,10 +8,10 @@ public class FunctionNode extends AstNode {
 	AstNode body;
 
     public FunctionNode(String functionName, ArrayList<String> parameters, AstNode body) {
+		super(NodeType.FUNC, null, new ArrayList<>());
         this.functionName = functionName;
         this.parameters = parameters;
         this.body = body;
-        super(NodeType.FUNC, null, null);
     }
 
     public String getFunctionName() {

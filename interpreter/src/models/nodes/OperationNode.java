@@ -11,9 +11,9 @@ public class OperationNode extends AstNode {
 	ArrayList<AstNode> operands;
 
 	public OperationNode(Token operator, ArrayList<AstNode> operands) {
-		this.operator = operator.getValue();
-		this.operands = operands;
 		super(operands.get(0).getType(), null, operands);
+		this.operator = operator.getValue();
+		this.operands = operands;	
 	}
 
 	public String getOperator() {

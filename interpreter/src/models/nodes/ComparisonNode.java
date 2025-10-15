@@ -1,5 +1,7 @@
 package models.nodes;
 
+import java.util.ArrayList;
+
 import models.token.Token;
 
 public class ComparisonNode extends AstNode {
@@ -8,10 +10,10 @@ public class ComparisonNode extends AstNode {
 	AstNode rightElement;
 
 	public ComparisonNode(Token operator, AstNode leftElement, AstNode rightElement) {
+		super(NodeType.COMP, null, new ArrayList<>());
 		this.comparison = operator.getValue();
 		this.leftElement = leftElement;
 		this.rightElement = rightElement;
-        super(NodeType.COMP, null, null);
         addChild(leftElement);
         addChild(rightElement);
 	}

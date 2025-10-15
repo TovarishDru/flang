@@ -1,5 +1,7 @@
 package models.nodes;
 
+import java.util.ArrayList;
+
 import models.token.Token;
 import models.token.TokenType;
 
@@ -8,9 +10,9 @@ public class LiteralNode extends AstNode {
     private TokenType type;
 
     public LiteralNode(Token token) {
+        super(NodeType.LITERAL, null, new ArrayList<>());
         this.value = token.getValue();
         this.type = token.getType();
-        super(NodeType.LITERAL, null, null);
     }
 
     @Override

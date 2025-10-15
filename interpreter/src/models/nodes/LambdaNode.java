@@ -7,9 +7,9 @@ public class LambdaNode extends AstNode {
 	AstNode body;
 
     public LambdaNode(ArrayList<String> parameters, AstNode body) {
+        super(NodeType.LAMBDA, null, new ArrayList<>());
         this.parameters = parameters;
         this.body = body;
-        super(NodeType.LAMBDA, null, null);
     }
 
     public ArrayList<String> getParameters() {

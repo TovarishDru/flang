@@ -11,9 +11,9 @@ public class FunctionCallNode extends AstNode {
 	ArrayList<AstNode> parameters;
 
     public FunctionCallNode(String functionName, ArrayList<AstNode> parameters) {
+		super(NodeType.FUNCCALL, null, new ArrayList<>());
 		this.functionName = functionName;
 		this.parameters = parameters;
-        super(NodeType.FUNCCALL, null, null);
 	}
 
     public String getFunctionName() {
