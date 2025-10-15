@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 public class SymbolTable {
     private SymbolTable parent;
-    Map<String, AstNode> symbols;
+    public Map<String, AstNode> symbols;
 
     public SymbolTable(SymbolTable parent) {
 		this.parent = parent;
@@ -29,6 +29,6 @@ public class SymbolTable {
 	}
 
 	public boolean defined(String name) {
-		return find(name) != null;
+		return symbols.containsKey(name) || (parent != null && parent.defined(name));
 	}
 }
