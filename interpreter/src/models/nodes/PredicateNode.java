@@ -15,4 +15,10 @@ public class PredicateNode extends AstNode {
 
 	public String getPredicate() { return predicate; }
 	public AstNode getArgument() { return argument; }
+
+	@Override
+    public String toString() {
+        return "PredicateNode(" + predicate.toString() + ":" + argument.toString() + ")";
+    }
+
 }

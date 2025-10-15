@@ -20,4 +20,9 @@ public class SetqNode extends AstNode {
 	public AstNode getValue() {
 		return value;
 	}
+
+	@Override
+    public String toString() {
+        return "SetqNode(" + name.toString() + ":" + value.toString() + ")";
+    }
 }

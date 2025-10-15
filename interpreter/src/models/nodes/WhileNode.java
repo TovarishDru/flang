@@ -16,4 +16,9 @@ public class WhileNode extends AstNode {
 
 	public AstNode getCondition() { return condition; }
 	public ArrayList<AstNode> getBody() { return body; }
+
+	@Override
+    public String toString() {
+        return "WhileNode(" + condition.toString() + ":" + body.toString() + ")";
+    }
 }

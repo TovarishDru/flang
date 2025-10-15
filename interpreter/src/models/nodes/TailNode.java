@@ -12,4 +12,9 @@ public class TailNode extends AstNode {
 	}
 
 	public AstNode getListExpr() { return listExpr; }
+
+	@Override
+    public String toString() {
+        return "TailNode(" + listExpr.toString() + ")";
+    }
 }

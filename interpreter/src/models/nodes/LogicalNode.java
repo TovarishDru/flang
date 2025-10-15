@@ -19,4 +19,10 @@ public class LogicalNode extends AstNode {
 	public String getOperator() { return operator; }
 	public AstNode getLeft() { return left; }
 	public AstNode getRight() { return right; }
+
+	 @Override
+    public String toString() {
+        return "AstNode(" + operator.toString() + ",left=" + left.toString() +  ",right=" + right.toString() + ")";
+    }
+
 }

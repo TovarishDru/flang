@@ -12,4 +12,9 @@ public class ReturnNode extends AstNode {
 	}
 
 	public AstNode getValue() { return value; }
+
+	@Override
+    public String toString() {
+        return "ReturnNode(" + value.toString() + ")";
+    }
 }

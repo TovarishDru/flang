@@ -12,4 +12,9 @@ public class HeadNode extends AstNode {
 	}
 
 	public AstNode getListExpr() { return listExpr; }
+
+	@Override
+    public String toString() {
+        return "HeadNode(" + listExpr.toString() +")";
+    }
 }

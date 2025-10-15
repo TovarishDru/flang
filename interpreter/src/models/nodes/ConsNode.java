@@ -16,4 +16,9 @@ public class ConsNode extends AstNode {
 
 	public AstNode getItem() { return item; }
 	public AstNode getList() { return list; }
+
+	@Override
+    public String toString() {
+        return "ConsNode(" + item.toString() + ":" + list.toString() + ")";
+    }
 }

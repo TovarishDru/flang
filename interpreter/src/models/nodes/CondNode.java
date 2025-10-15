@@ -20,4 +20,13 @@ public class CondNode extends AstNode {
 	public AstNode getCondition() { return condition; }
 	public AstNode getAction() { return action; }
 	public AstNode getDefaultAction() { return defaultAction; }
+
+	@Override
+    public String toString() {
+		if (defaultAction != null) {
+			return "CondNode(" + condition.toString() + "?" + action.toString() + ":" + defaultAction.toString() + ")";
+		} else {
+			return "CondNode(" + condition.toString() + "?" + action.toString() + ")";
+		}   
+    }
 }

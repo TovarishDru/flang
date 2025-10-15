@@ -12,4 +12,9 @@ public class EvalNode extends AstNode {
 	}
 
 	public AstNode getExpr() { return expr; }
+
+	 @Override
+    public String toString() {
+        return "EvalNode(" + expr.toString() + ")";
+    }
 }

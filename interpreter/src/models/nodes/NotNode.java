@@ -12,4 +12,9 @@ public class NotNode extends AstNode {
 	}
 
 	public AstNode getArgument() { return argument; }
+
+	@Override
+    public String toString() {
+        return "NotNode(" + argument.toString() + ")";
+    }
 }
