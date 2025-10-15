@@ -22,7 +22,7 @@ public class Parser {
     public AstNode parseAst() throws Exception {
         ArrayList<AstNode> instructions = new ArrayList<>();
 
-        while (tokenIndex <= tokens.size()) {
+        while (tokenIndex < tokens.size()) {
             AstNode instruction = parseNode();
             instructions.add(instruction);
         }

@@ -1,3 +1,4 @@
+import models.nodes.AstNode;
 import models.token.Token;
 import stages.Lexer;
 import stages.Parser;
@@ -18,7 +19,9 @@ public class Main {
                 writeTokens(tokens, args[i]);
 
                 Parser parser = new Parser(tokens);
-                parser.parseAst();
+                
+                AstNode ast = parser.parseAst();
+                printAst(ast, 0);
             } catch (Exception e) {
                 System.out.println("Error while processing file " + args[i] + ": " + e.toString());
             }
@@ -55,5 +58,17 @@ public class Main {
             System.out.println(lineBuilder.toString().trim());
         }
     }
+
+    private static void printAst(AstNode node, int depth) {
+    StringBuilder indent = new StringBuilder();
+    for (int i = 0; i < depth; i++) {
+        indent.append("  ");
+    }
+    System.out.println(indent + node.toString());
+
+    for (AstNode child : node.getChildren()) {
+        printAst(child, depth + 1);
+    }
+}
 
 }

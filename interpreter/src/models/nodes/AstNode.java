@@ -27,4 +27,8 @@ public abstract class AstNode {
     public String toString() {
         return "AstNode()";
     }
+
+    public ArrayList<AstNode> getChildren() {
+        return children;
+    }
 }
