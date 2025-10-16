@@ -60,15 +60,14 @@ public class Main {
     }
 
     private static void printAst(AstNode node, int depth) {
-    StringBuilder indent = new StringBuilder();
-    for (int i = 0; i < depth; i++) {
-        indent.append("  ");
-    }
-    System.out.println(indent + node.toString());
+        StringBuilder indent = new StringBuilder();
+        for (int i = 0; i < depth; i++) {
+            indent.append("  ");
+        }
+        System.out.println(indent + node.toString());
 
-    for (AstNode child : node.getChildren()) {
-        printAst(child, depth + 1);
+        for (AstNode child : node.getChildren()) {
+            printAst(child, depth + 1);
+        }
     }
-}
-
 }
