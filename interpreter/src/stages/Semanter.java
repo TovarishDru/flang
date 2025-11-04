@@ -60,12 +60,50 @@ public class Semanter {
         }
     }
 
+    private TokenType extractNodeEndValue(AstNode node) {
+        if (node.getType() == NodeType.LITERAL) {
+            TokenType literalType = ((LiteralNode) node).getTokenType();
+            return literalType;
+        }
+        if (node.getType() == NodeType.ATOM) {
+            TokenType atomType = ((AtomNode) node).getTokenType();
+            return atomType;
+        }
+        if (node.getType() == NodeType.FUNCCALL) {
+            return TokenType.FUNC;
+        }
+        return null;
+    }
+
+    private boolean checkIfCompatible(TokenType first, TokenType second) {
+        switch (first) {
+            case TokenType.INTEGER, TokenType.REAL:
+                return second == TokenType.INTEGER || second == TokenType.REAL;
+            case TokenType.BOOLEAN:
+                return second == TokenType.BOOLEAN;
+            default:
+                return false;
+        }
+    }
+
     private void checkArithmetic(AstNode node, List<AstNode> children, Deque<Integer> path)
             throws SemanticException {
-        if (children == null || children.isEmpty()) {
-            throw error("ERROR: ARITHMETIC node %s has no operands (children) at path %s",
-                    node.getType(), pathString(path));
+        int count = (children == null) ? 0 : children.size();
+        if (count != 2) {
+            throw error("ERROR: ARITHMETIC node %s must have exactly 2 operands but has %d at path %s",
+                    node.getType(), count, pathString(path));
         }
+
+        for (int i = 0; i < children.size(); i++) {
+            AstNode child = children.get(i);
+            TokenType type = extractNodeEndValue(child);
+
+            if (type == TokenType.INTEGER || type == TokenType.REAL || type == TokenType.FUNC) {
+                continue;
+            }
+        }
+        throw error("ERROR: ARITHMETIC node %s got unexpected operands at path %s",
+                        node.getType(), pathString(path));
     }
 
     private void checkLogical(AstNode node, List<AstNode> children, Deque<Integer> path)
@@ -74,6 +112,18 @@ public class Semanter {
         if (count != 2) {
             throw error("ERROR: LOGICAL node %s must have exactly 2 operands but has %d at path %s",
                     node.getType(), count, pathString(path));
+        }
+
+        for (int i = 0; i < children.size(); i++) {
+            AstNode child = children.get(i);
+            TokenType type = extractNodeEndValue(child);
+
+            if (type == TokenType.BOOLEAN || type == TokenType.FUNC) {
+                continue;
+            }
+
+            throw error("ERROR: LOGICAL node %s got unexpected operands at path %s",
+                        node.getType(), pathString(path));
         }
     }
 
@@ -88,13 +138,16 @@ public class Semanter {
         AstNode left = children.get(0);
         AstNode right = children.get(1);
 
-        if (left instanceof Typed lt && right instanceof Typed rt) {
-            Object ltType = lt.getDataType();
-            Object rtType = rt.getDataType();
-            if (!Objects.equals(ltType, rtType)) {
-                throw error("ERROR: %s cannot be compared with %s (node %s) at path %s",
-                        String.valueOf(ltType), String.valueOf(rtType), node.getType(), pathString(path));
-            }
+        TokenType leftType = extractNodeEndValue(left);
+        TokenType rightType = extractNodeEndValue(right);
+
+        if (leftType == TokenType.FUNC || rightType == TokenType.FUNC) {
+            return;
+        }
+
+        if (!checkIfCompatible(leftType, rightType)) {
+            throw error("ERROR: COMPARISON node %s has incompatible operands at path %s",
+                    node.getType(), pathString(path));
         }
     }
 
