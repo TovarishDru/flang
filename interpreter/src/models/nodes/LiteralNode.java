@@ -15,8 +15,12 @@ public class LiteralNode extends AstNode {
         this.type = token.getType();
     }
 
+    public String getValue() {
+        return value;
+    }
+
     public TokenType getTokenType() {
-        return this.type;
+        return type;
     }
 
     @Override
