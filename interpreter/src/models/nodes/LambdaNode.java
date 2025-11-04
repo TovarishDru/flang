@@ -23,7 +23,7 @@ public class LambdaNode extends AstNode {
     @Override
     public String toString() {
         String stringParams = String.join(",", parameters);
-
-        return "LambdaNode(" + stringParams + ")";
+        
+        return "LambdaNode(" + stringParams + ": " + body + ")";
     }
 }

@@ -100,7 +100,7 @@ public class Parser {
 
             case ATOM,
                  PLUS, MINUS, TIMES, DIVIDE,
-                 LESS, LESSEQ, GREATER, GREATEREQ, EQUAL, NONEQUAL, ISBOOL // TODO: add all types that we can quote
+                 LESS, LESSEQ, GREATER, GREATEREQ, EQUAL, NONEQUAL, ISBOOL
                     -> {
                 return new AtomNode(t);
             }
@@ -311,7 +311,7 @@ public class Parser {
         AstNode condition = parseNode();
         AstNode action = parseNode();
 
-        AstNode defaultAction = null; // optional else
+        AstNode defaultAction = null;
         if (!check(TokenType.RPAREN)) {
             defaultAction = parseNode();
         }
@@ -443,6 +443,26 @@ public class Parser {
 
         localScope = prev;
 
-        return new LambdaNode(params, body);
+        LambdaNode lambdaBody = new LambdaNode(params, body);
+
+        if (peek().getType() != TokenType.RPAREN) {
+            return parseLambdaCall(lambdaBody);
+        }
+
+        return lambdaBody;
+    }
+
+    private AstNode parseLambdaCall(LambdaNode lambdaBody) throws Exception {
+        ArrayList<AstNode> args = new ArrayList<>();
+
+        for (int i = 0; i < lambdaBody.getParameters().size(); i++) {
+            args.add(parseNode());
+        }
+
+        if (peek().getType() != TokenType.RPAREN) {
+            throw new Exception("ERROR: TOO MANY ARGS FOR LAMBDA CALL " + peek().getValue() + " at line " + peek().getLine());
+        }
+
+        return new FunctionCallNode("lambda", args);
     }
 }

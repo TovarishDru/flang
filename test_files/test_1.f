@@ -1,6 +1,7 @@
 (setq x 5)
 x
 
+((lambda (a b) (plus a b)) 55 -176)
 
 (setq  y '(plus -1.35 2.15))
 (eval y)
