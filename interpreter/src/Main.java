@@ -2,6 +2,7 @@ import models.nodes.AstNode;
 import models.token.Token;
 import stages.Lexer;
 import stages.Parser;
+import stages.Semanter;
 
 import java.util.ArrayList;
 import java.nio.file.Files;
@@ -19,9 +20,11 @@ public class Main {
                 writeTokens(tokens, args[i]);
 
                 Parser parser = new Parser(tokens);
-                
                 AstNode ast = parser.parseAst();
                 printAst(ast, 0);
+
+                Semanter semanter = new Semanter();
+                semanter.analyze(ast);
             } catch (Exception e) {
                 System.out.println("Error while processing file " + args[i] + ": " + e.toString());
             }

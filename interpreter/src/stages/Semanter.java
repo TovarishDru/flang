@@ -22,17 +22,15 @@ public class Semanter {
         }
     }
 
-    private final Set<NodeType> arithmeticKinds;
-    private final Set<NodeType> logicalKinds;
-    private final Set<NodeType> comparisonKinds;
+    private final NodeType arithmeticKind;
+    private final NodeType logicalKind;
+    private final NodeType comparisonKind;
 
 
-    public Semanter(Set<NodeType> arithmeticKinds,
-                    Set<NodeType> logicalKinds,
-                    Set<NodeType> comparisonKinds) {
-        this.arithmeticKinds = Objects.requireNonNull(arithmeticKinds, "arithmeticKinds");
-        this.logicalKinds = Objects.requireNonNull(logicalKinds, "logicalKinds");
-        this.comparisonKinds = Objects.requireNonNull(comparisonKinds, "comparisonKinds");
+    public Semanter() {
+        this.arithmeticKind = NodeType.OPERATION;
+        this.logicalKind = NodeType.LOGICALOP;
+        this.comparisonKind = NodeType.COMP;
     }
 
     public void analyze(AstNode root) throws SemanticException {
@@ -47,11 +45,11 @@ public class Semanter {
         NodeType kind = node.getType();
         List<AstNode> children = node.getChildren();
 
-        if (arithmeticKinds.contains(kind)) {
+        if (arithmeticKind == kind) {
             checkArithmetic(node, children, path);
-        } else if (logicalKinds.contains(kind)) {
+        } else if (logicalKind == kind) {
             checkLogical(node, children, path);
-        } else if (comparisonKinds.contains(kind)) {
+        } else if (comparisonKind == kind) {
             checkComparison(node, children, path);
         }
 
