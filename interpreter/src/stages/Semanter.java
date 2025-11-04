@@ -1,7 +1,10 @@
 package stages;
 
 import models.nodes.AstNode;
+import models.nodes.AtomNode;
 import models.nodes.NodeType;
+import models.token.TokenType;
+import models.nodes.LiteralNode;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -64,10 +67,32 @@ public class Semanter {
 
     private void checkArithmetic(AstNode node, List<AstNode> children, Deque<Integer> path)
             throws SemanticException {
-        if (children == null || children.isEmpty()) {
-            throw error("ERROR: ARITHMETIC node %s has no operands (children) at path %s",
-                    node.getType(), pathString(path));
+        int count = (children == null) ? 0 : children.size();
+        if (count != 2) {
+            throw error("ERROR: ARITHMETIC node %s must have exactly 2 operands but has %d at path %s",
+                    node.getType(), count, pathString(path));
         }
+
+        for (int i = 0; i < children.size(); i++) {
+            AstNode child = children.get(i);
+            if (child.getType() == NodeType.LITERAL) {
+                TokenType literalType = ((LiteralNode) child).getTokenType();
+                if (literalType != TokenType.BOOLEAN) {
+                    continue;
+                }
+            }
+            if (child.getType() == NodeType.ATOM) {
+                TokenType atomType = ((AtomNode) child).getTokenType();
+                if (atomType == TokenType.INTEGER && atomType == TokenType.REAL) {
+                    continue;
+                }
+            }
+            if (child.getType() == NodeType.FUNCCALL) {
+                continue;
+            }
+        }
+        throw error("ERROR: ARITHMETIC node %s got unexpected operands at path %s",
+                        node.getType(), pathString(path));
     }
 
     private void checkLogical(AstNode node, List<AstNode> children, Deque<Integer> path)
@@ -76,6 +101,28 @@ public class Semanter {
         if (count != 2) {
             throw error("ERROR: LOGICAL node %s must have exactly 2 operands but has %d at path %s",
                     node.getType(), count, pathString(path));
+        }
+
+        for (int i = 0; i < children.size(); i++) {
+            AstNode child = children.get(i);
+            if (child.getType() == NodeType.LITERAL) {
+                TokenType literalType = ((LiteralNode) child).getTokenType();
+                if (literalType == TokenType.BOOLEAN) {
+                    continue;
+                }
+            }
+            if (child.getType() == NodeType.ATOM) {
+                TokenType atomType = ((AtomNode) child).getTokenType();
+                if (atomType == TokenType.BOOLEAN) {
+                    continue;
+                }
+                
+            }
+            if (child.getType() == NodeType.FUNCCALL) {
+                continue;
+            }
+            throw error("ERROR: LOGICAL node %s got unexpected operands at path %s",
+                        node.getType(), pathString(path));
         }
     }
 

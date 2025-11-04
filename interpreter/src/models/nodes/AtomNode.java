@@ -15,6 +15,10 @@ public class AtomNode extends AstNode {
         this.type = token.getType();
     }
 
+    public TokenType getTokenType() {
+        return this.type;
+    }
+
     @Override
     public String toString() {
         return "AtomNode(" + value + ")";
