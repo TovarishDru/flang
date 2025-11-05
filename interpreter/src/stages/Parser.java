@@ -201,11 +201,14 @@ public class Parser {
 
         while (!check(TokenType.RPAREN)) {
             AstNode expr = parseNode();
+            if (expr.getType() == NodeType.LITERAL && (((LiteralNode) expr).getTokenType() == TokenType.BOOLEAN)) {
+                throw new Exception("ERROR: IMPOSSIBLE OPERATION at line: " + operatorToken.getLine());
+            }
             operands.add(expr);
         }
         consume(TokenType.RPAREN);
 
-        if (operands.size() < 2 && !(operator.equals("plus") || operator.equals("minus"))) {
+        if (operands.size() != 2) {
             throw new Exception("ERROR: IMPOSSIBLE OPERATION at line: " + operatorToken.getLine());
         }
         AstNode operatorNode = new OperationNode(operatorToken, operands);

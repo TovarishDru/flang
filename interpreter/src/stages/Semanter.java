@@ -31,126 +31,6 @@ public class Semanter {
         this.comparisonKind = NodeType.COMP;
     }
 
-    public void analyze(AstNode root) throws SemanticException {
-        if (root == null) return;
-        Deque<Integer> path = new ArrayDeque<>();
-        traverse(root, path);
-    }
-
-    private void traverse(AstNode node, Deque<Integer> path) throws SemanticException {
-        if (node == null) return;
-
-        NodeType kind = node.getType();
-        List<AstNode> children = node.getChildren();
-
-        if (arithmeticKind == kind) {
-            checkArithmetic(node, children, path);
-        } else if (logicalKind == kind) {
-            checkLogical(node, children, path);
-        } else if (comparisonKind == kind) {
-            checkComparison(node, children, path);
-        }
-
-        if (children != null) {
-            for (int i = 0; i < children.size(); i++) {
-                path.addLast(i);
-                traverse(children.get(i), path);
-                path.removeLast();
-            }
-        }
-    }
-
-    private TokenType extractNodeEndValue(AstNode node) {
-        if (node.getType() == NodeType.LITERAL) {
-            TokenType literalType = ((LiteralNode) node).getTokenType();
-            return literalType;
-        }
-        if (node.getType() == NodeType.ATOM) {
-            TokenType atomType = ((AtomNode) node).getTokenType();
-            return atomType;
-        }
-        if (node.getType() == NodeType.FUNCCALL) {
-            return TokenType.FUNC;
-        }
-        return null;
-    }
-
-    private boolean checkIfCompatible(TokenType first, TokenType second) {
-        switch (first) {
-            case TokenType.INTEGER, TokenType.REAL:
-                return second == TokenType.INTEGER || second == TokenType.REAL;
-            case TokenType.BOOLEAN:
-                return second == TokenType.BOOLEAN;
-            default:
-                return false;
-        }
-    }
-
-    private void checkArithmetic(AstNode node, List<AstNode> children, Deque<Integer> path)
-            throws SemanticException {
-        int count = (children == null) ? 0 : children.size();
-        if (count != 2) {
-            throw error("ERROR: ARITHMETIC node %s must have exactly 2 operands but has %d at path %s",
-                    node.getType(), count, pathString(path));
-        }
-
-        for (int i = 0; i < children.size(); i++) {
-            AstNode child = children.get(i);
-            TokenType type = extractNodeEndValue(child);
-
-            if (type == TokenType.INTEGER || type == TokenType.REAL || type == TokenType.FUNC) {
-                continue;
-            }
-        }
-        throw error("ERROR: ARITHMETIC node %s got unexpected operands at path %s",
-                        node.getType(), pathString(path));
-    }
-
-    private void checkLogical(AstNode node, List<AstNode> children, Deque<Integer> path)
-            throws SemanticException {
-        int count = (children == null) ? 0 : children.size();
-        if (count != 2) {
-            throw error("ERROR: LOGICAL node %s must have exactly 2 operands but has %d at path %s",
-                    node.getType(), count, pathString(path));
-        }
-
-        for (int i = 0; i < children.size(); i++) {
-            AstNode child = children.get(i);
-            TokenType type = extractNodeEndValue(child);
-
-            if (type == TokenType.BOOLEAN || type == TokenType.FUNC) {
-                continue;
-            }
-
-            throw error("ERROR: LOGICAL node %s got unexpected operands at path %s",
-                        node.getType(), pathString(path));
-        }
-    }
-
-    private void checkComparison(AstNode node, List<AstNode> children, Deque<Integer> path)
-            throws SemanticException {
-        int count = (children == null) ? 0 : children.size();
-        if (count != 2) {
-            throw error("ERROR: COMPARISON node %s must have exactly 2 operands but has %d at path %s",
-                    node.getType(), count, pathString(path));
-        }
-
-        AstNode left = children.get(0);
-        AstNode right = children.get(1);
-
-        TokenType leftType = extractNodeEndValue(left);
-        TokenType rightType = extractNodeEndValue(right);
-
-        if (leftType == TokenType.FUNC || rightType == TokenType.FUNC) {
-            return;
-        }
-
-        if (!checkIfCompatible(leftType, rightType)) {
-            throw error("ERROR: COMPARISON node %s has incompatible operands at path %s",
-                    node.getType(), pathString(path));
-        }
-    }
-
     private static SemanticException error(String fmt, Object... args) {
         return new SemanticException(String.format(fmt, args));
     }
@@ -162,8 +42,12 @@ public class Semanter {
         return sb.toString();
     }
 
-    public AstNode optimize(AstNode root) {
-        if (root == null) return null;
+    public void optimize(AstNode root) {
+        if (root == null) return;
+        root = performOptimizations(root);
+    }
+
+    private AstNode performOptimizations(AstNode root) {
         root = constantFold(root);
         root = simplifyConditionals(root);
         return root;

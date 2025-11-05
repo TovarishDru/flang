@@ -24,7 +24,7 @@ public class Main {
                 printAst(ast, 0);
 
                 Semanter semanter = new Semanter();
-                semanter.analyze(ast);
+                semanter.optimize(ast);
             } catch (Exception e) {
                 System.out.println("Error while processing file " + args[i] + ": " + e.toString());
             }
