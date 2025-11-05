@@ -1,6 +1,7 @@
 package models.nodes;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class LogicalNode extends AstNode {
 	private final String operator; // "and" | "or" | "xor"
@@ -8,7 +9,7 @@ public class LogicalNode extends AstNode {
 	private final AstNode right;
 
 	public LogicalNode(String operator, AstNode left, AstNode right) {
-		super(NodeType.LOGICALOP, null, new ArrayList<>());
+		super(NodeType.LOGICALOP, null, new ArrayList<>(List.of(left, right)));
 		this.operator = operator;
 		this.left = left;
 		this.right = right;

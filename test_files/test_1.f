@@ -3,6 +3,10 @@ x
 
 ((lambda (a b) (plus a b)) 55 -176)
 
+(plus 5 3)
+
+(and true false)
+
 (setq  y '(plus -1.35 2.15))
 (eval y)
 

@@ -12,7 +12,7 @@ public class OperationNode extends AstNode {
 	TokenType type;
 
 	public OperationNode(Token operator, ArrayList<AstNode> operands) {
-		super(operands.get(0).getType(), null, operands);
+		super(NodeType.OPERATION, null, operands);
 		this.operator = operator.getValue();
 		this.type = operator.getType();
 		this.operands = operands;
