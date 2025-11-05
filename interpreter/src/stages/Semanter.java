@@ -7,6 +7,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class Semanter {
 
@@ -64,55 +65,54 @@ public class Semanter {
         }
 
         NodeType kind = node.getType();
+        Optional<AstNode> optResult = Optional.empty();
 
         // unary NOT
         if (kind == NodeType.NOT && kids != null && kids.size() == 1) {
             Boolean b = asBoolLiteral(kids.get(0));
-            if (b != null) return makeBoolLiteral(!b);
-            return node;
+            if (b != null) optResult = Optional.of(makeBoolLiteral(!b));
         }
 
         // arithmetic
-        if (kind == NodeType.OPERATION && kids != null && kids.size() == 2) {
+        else if (kind == NodeType.OPERATION && kids != null && kids.size() == 2) {
             Number L = asNumberLiteral(kids.get(0));
             Number R = asNumberLiteral(kids.get(1));
             if (L != null && R != null) {
                 TokenType op = readOperatorType(node);
                 if (op == null) op = mapWordToType(readOperatorWord(node));
                 double l = L.doubleValue(), r = R.doubleValue();
-                if (op == TokenType.PLUS) return makeNumberLiteral(l + r);
-                if (op == TokenType.MINUS) return makeNumberLiteral(l - r);
-                if (op == TokenType.TIMES) return makeNumberLiteral(l * r);
+                if (op == TokenType.PLUS) optResult = Optional.of(makeNumberLiteral(l + r));
+                if (op == TokenType.MINUS) optResult = Optional.of(makeNumberLiteral(l - r));
+                if (op == TokenType.TIMES) optResult = Optional.of(makeNumberLiteral(l * r));
                 if (op == TokenType.DIVIDE) {
-                    if (r == 0.0) return node;
-                    return makeNumberLiteral(l / r);
+                    if (r != 0.0) optResult = Optional.of(makeNumberLiteral(l / r));
                 }
             }
         }
 
         // logical
-        if (kind == NodeType.LOGICALOP && kids != null && kids.size() == 2) {
+        else if (kind == NodeType.LOGICALOP && kids != null && kids.size() == 2) {
             TokenType op = readOperatorType(node);
             if (op == null) op = mapWordToType(readOperatorWord(node));
             Boolean LB = asBoolLiteral(kids.get(0));
             Boolean RB = asBoolLiteral(kids.get(1));
             if (op == TokenType.AND) {
-                if (Boolean.FALSE.equals(LB)) return makeBoolLiteral(false);
-                if (Boolean.TRUE.equals(LB) && RB != null) return makeBoolLiteral(RB);
-                if (Boolean.TRUE.equals(RB) && LB != null) return makeBoolLiteral(LB);
-                if (LB != null && RB != null) return makeBoolLiteral(LB && RB);
+                if (Boolean.FALSE.equals(LB)) optResult = Optional.of(makeBoolLiteral(false));
+                if (Boolean.TRUE.equals(LB) && RB != null) optResult = Optional.of(makeBoolLiteral(RB));
+                if (Boolean.TRUE.equals(RB) && LB != null) optResult = Optional.of(makeBoolLiteral(LB));
+                if (LB != null && RB != null) optResult = Optional.of(makeBoolLiteral(LB && RB));
             } else if (op == TokenType.OR) {
-                if (Boolean.TRUE.equals(LB)) return makeBoolLiteral(true);
-                if (Boolean.FALSE.equals(LB) && RB != null) return makeBoolLiteral(RB);
-                if (Boolean.FALSE.equals(RB) && LB != null) return makeBoolLiteral(LB);
-                if (LB != null && RB != null) return makeBoolLiteral(LB || RB);
+                if (Boolean.TRUE.equals(LB)) optResult = Optional.of(makeBoolLiteral(true));
+                if (Boolean.FALSE.equals(LB) && RB != null) optResult = Optional.of(makeBoolLiteral(RB));
+                if (Boolean.FALSE.equals(RB) && LB != null) optResult = Optional.of(makeBoolLiteral(LB));
+                if (LB != null && RB != null) optResult = Optional.of(makeBoolLiteral(LB || RB));
             } else if (op == TokenType.XOR) {
-                if (LB != null && RB != null) return makeBoolLiteral(LB ^ RB);
+                if (LB != null && RB != null) optResult = Optional.of(makeBoolLiteral(LB ^ RB));
             }
         }
 
         // comparisons
-        if (kind == NodeType.COMP && kids != null && kids.size() == 2) {
+        else if (kind == NodeType.COMP && kids != null && kids.size() == 2) {
             TokenType op = readOperatorType(node);
             if (op == null) op = mapWordToType(readOperatorWord(node));
 
@@ -120,22 +120,25 @@ public class Semanter {
             Number Rn = asNumberLiteral(kids.get(1));
             if (Ln != null && Rn != null) {
                 double l = Ln.doubleValue(), r = Rn.doubleValue();
-                if (op == TokenType.EQUAL) return makeBoolLiteral(l == r);
-                if (op == TokenType.NONEQUAL) return makeBoolLiteral(l != r);
-                if (op == TokenType.LESS) return makeBoolLiteral(l < r);
-                if (op == TokenType.LESSEQ) return makeBoolLiteral(l <= r);
-                if (op == TokenType.GREATER) return makeBoolLiteral(l > r);
-                if (op == TokenType.GREATEREQ) return makeBoolLiteral(l >= r);
-                return node;
+                if (op == TokenType.EQUAL) optResult = Optional.of(makeBoolLiteral(l == r));
+                if (op == TokenType.NONEQUAL) optResult = Optional.of(makeBoolLiteral(l != r));
+                if (op == TokenType.LESS) optResult = Optional.of(makeBoolLiteral(l < r));
+                if (op == TokenType.LESSEQ) optResult = Optional.of(makeBoolLiteral(l <= r));
+                if (op == TokenType.GREATER) optResult = Optional.of(makeBoolLiteral(l > r));
+                if (op == TokenType.GREATEREQ) optResult = Optional.of(makeBoolLiteral(l >= r));
             }
 
             Boolean Lb = asBoolLiteral(kids.get(0));
             Boolean Rb = asBoolLiteral(kids.get(1));
             if (Lb != null && Rb != null) {
-                if (op == TokenType.EQUAL) return makeBoolLiteral(Objects.equals(Lb, Rb));
-                if (op == TokenType.NONEQUAL) return makeBoolLiteral(!Objects.equals(Lb, Rb));
-                return node;
+                if (op == TokenType.EQUAL) optResult = Optional.of(makeBoolLiteral(Objects.equals(Lb, Rb)));
+                if (op == TokenType.NONEQUAL) optResult = Optional.of(makeBoolLiteral(!Objects.equals(Lb, Rb)));
             }
+        }
+
+        if (optResult.isPresent()) {
+            System.out.println("Successfully found optimization for: " + node.toString() + ". Reduced to: " + optResult.get().toString());
+            return optResult.get();
         }
 
         return node;

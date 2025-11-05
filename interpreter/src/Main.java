@@ -17,14 +17,20 @@ public class Main {
                 Lexer lexer = new Lexer(content);
                 lexer.parseTokens();
                 ArrayList<Token> tokens = lexer.getTokens();
+                System.out.println("Tokenization result:");
                 writeTokens(tokens, args[i]);
 
                 Parser parser = new Parser(tokens);
                 AstNode ast = parser.parseAst();
+                System.out.println("\nParsing result:");
                 printAst(ast, 0);
 
+                System.out.println("\nOptimization logs:");
                 Semanter semanter = new Semanter();
                 semanter.optimize(ast);
+
+                System.out.println("\nTree after optimization:");
+                printAst(ast, 0);
             } catch (Exception e) {
                 System.out.println("Error while processing file " + args[i] + ": " + e.toString());
             }
