@@ -292,4 +292,48 @@ public class Interpreter {
 		}
 		return null;
     }
+
+    public Object visitListNode(ListNode listNode) {
+		List<Object> values = new ArrayList<>();
+		for (ASTNode element : listNode.getElements()) {
+			values.add(visit(element));
+		}
+		return values;
+	}
+
+    public Object visitQuoteNode(QuoteNode quoteNode) {
+		return quoteNode.getQuotedExpr();
+	}
+
+    public Object visitEvalNode(EvalNode evalNode) {
+		Object evalResult = visit(evalNode.getNode());
+		if (evalResult instanceof ASTNode) {
+			return visit((ASTNode) evalResult);
+		}
+		throw new RuntimeException("ERROR: UNEXPECTED ARGUMENT FOR EVAL");
+	}
+
+	public Object visitReturnNode(ReturnNode returnNode) {
+		return visit(returnNode.getValue());
+	}
+
+	public Object visitBreakNode(BreakNode breakNode) {
+		return true;
+	}
+
+    public Object visitHeadNode(HeadNode headNode) {
+		List<Object> list = (List<Object>) visit(headNode.getListExpr());
+		if (list.isEmpty()) {
+			throw new RuntimeException("ERROR: EMPTY LIST");
+		}
+		return list.getFirst();
+	}
+
+	public Object visitTailNode(TailNode tailNode) {
+		List<Object> list = (List<Object>) visit(tailNode.getListExpr());
+		if (list.isEmpty()) {
+			throw new RuntimeException("ERROR: EMPTY LIST");
+		}
+		return list.subList(1, list.size());
+	}
 }

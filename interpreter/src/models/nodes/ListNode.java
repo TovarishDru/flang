@@ -20,6 +20,10 @@ public class ListNode extends AstNode {
         return interpreter.visitListNode(this);
     }
 
+	public ArrayList<AstNode> getElements() {
+		return this.elements;
+	}
+
 	@Override
     public String toString() {
         String elementsStr = elements.stream()
