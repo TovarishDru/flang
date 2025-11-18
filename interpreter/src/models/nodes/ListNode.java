@@ -14,6 +14,11 @@ public class ListNode extends AstNode {
 		super(NodeType.LIST, null, elements);
 		this.elements = elements;
 	}
+	
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitListNode(this);
+    }
 
 	@Override
     public String toString() {

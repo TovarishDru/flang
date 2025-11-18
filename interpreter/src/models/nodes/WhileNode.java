@@ -14,6 +14,11 @@ public class WhileNode extends AstNode {
 		for (AstNode b : body) addChild(b);
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitWhileNode(this);
+    }
+
 	public AstNode getCondition() { return condition; }
 	public ArrayList<AstNode> getBody() { return body; }
 

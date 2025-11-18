@@ -13,6 +13,11 @@ public class SetqNode extends AstNode {
 		addChild(value);
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitSetqNode(this);
+    }
+
 	public String getName() {
 		return name;
 	}

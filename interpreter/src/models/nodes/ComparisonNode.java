@@ -11,7 +11,6 @@ public class ComparisonNode extends AstNode {
 	AstNode rightElement;
 	private TokenType compType;
 
-
 	public ComparisonNode(Token operator, AstNode leftElement, AstNode rightElement) {
 		super(NodeType.COMP, null, new ArrayList<>());
 		this.comparison = operator.getValue();
@@ -21,6 +20,11 @@ public class ComparisonNode extends AstNode {
 		addChild(leftElement);
 		addChild(rightElement);
 	}
+
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitComparisonNode(this);
+    }
 
 	public String getComparison() {
 		return comparison;

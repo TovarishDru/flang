@@ -13,6 +13,11 @@ public class PredicateNode extends AstNode {
 		addChild(argument);
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitPredicateNode(this);
+    }
+
 	public String getPredicate() { return predicate; }
 	public AstNode getArgument() { return argument; }
 

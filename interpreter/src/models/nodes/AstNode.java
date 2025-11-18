@@ -1,6 +1,7 @@
 package models.nodes;
 
 import models.nodes.NodeType;
+import stages.Interpreter;
 
 import java.util.ArrayList;
 
@@ -14,6 +15,8 @@ public abstract class AstNode {
         this.parent = parent;
         this.children = children;
     }
+
+    public abstract Object accept(Interpreter interpreter);
 
     public NodeType getType() {
         return type;

@@ -11,6 +11,11 @@ public class NotNode extends AstNode {
 		addChild(argument);
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitNotNode(this);
+    }
+
 	public AstNode getArgument() { return argument; }
 
 	@Override

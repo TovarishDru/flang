@@ -14,6 +14,11 @@ public class ConsNode extends AstNode {
 		addChild(list);
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitConsNode(this);
+    }
+
 	public AstNode getItem() { return item; }
 	public AstNode getList() { return list; }
 

@@ -12,6 +12,11 @@ public class LambdaNode extends AstNode {
         this.body = body;
     }
 
+    @Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitLambdaNode(this);
+    }
+
     public ArrayList<String> getParameters() {
 		return parameters;
 	}

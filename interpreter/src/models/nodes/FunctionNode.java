@@ -14,6 +14,11 @@ public class FunctionNode extends AstNode {
         this.body = body;
     }
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitFunctionNode(this);
+    }
+
     public String getFunctionName() {
 		return functionName;
 	}

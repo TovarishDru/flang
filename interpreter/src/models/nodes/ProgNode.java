@@ -9,6 +9,11 @@ public class ProgNode extends AstNode {
     }
 
     @Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitProgNode(this);
+    }
+
+    @Override
     public String toString() {
         String statementsStr = children.stream()
 				.map(statement -> statement.toString())

@@ -17,6 +17,11 @@ public class CondNode extends AstNode {
 		if (defaultAction != null) addChild(defaultAction);
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitCondNode(this);
+    }
+
 	public AstNode getCondition() { return condition; }
 	public AstNode getAction() { return action; }
 	public AstNode getDefaultAction() { return defaultAction; }

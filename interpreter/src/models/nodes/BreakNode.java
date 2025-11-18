@@ -8,6 +8,11 @@ public class BreakNode extends AstNode {
 	}
 
 	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitBreakNode(this);
+    }
+
+	@Override
     public String toString() {
         return "BreakNode()";
     }

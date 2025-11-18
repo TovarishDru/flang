@@ -10,6 +10,11 @@ public class QuoteNode extends AstNode {
 		this.quotedExpr = quotedExpr;
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitQuoteNode(this);
+    }
+
 	public AstNode getQuotedExpr() {
 		return quotedExpr;
 	}

@@ -17,6 +17,11 @@ public class LogicalNode extends AstNode {
 		addChild(right);
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitLogicalNode(this);
+    }
+
 	public String getOperator() { return operator; }
 	public AstNode getLeft() { return left; }
 	public AstNode getRight() { return right; }

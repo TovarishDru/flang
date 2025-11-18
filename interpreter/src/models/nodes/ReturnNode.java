@@ -11,6 +11,11 @@ public class ReturnNode extends AstNode {
 		addChild(value);
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitReturnNode(this);
+    }
+
 	public AstNode getValue() { return value; }
 
 	@Override

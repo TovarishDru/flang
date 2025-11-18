@@ -11,6 +11,11 @@ public class TailNode extends AstNode {
 		addChild(listExpr);
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitTailNode(this);
+    }
+
 	public AstNode getListExpr() { return listExpr; }
 
 	@Override

@@ -15,6 +15,11 @@ public class LiteralNode extends AstNode {
         this.type = token.getType();
     }
 
+    @Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitLiteralNode(this);
+    }
+
     public String getValue() {
         return value;
     }

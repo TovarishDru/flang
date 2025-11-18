@@ -10,6 +10,11 @@ public class EvalNode extends AstNode {
 		this.expr = expr;
 		addChild(expr);
 	}
+	
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitEvalNode(this);
+    }
 
 	public AstNode getExpr() { return expr; }
 

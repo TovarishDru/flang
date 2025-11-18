@@ -16,6 +16,11 @@ public class FunctionCallNode extends AstNode {
 		this.parameters = parameters;
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitFunctionCallNode(this);
+    }
+
     public String getFunctionName() {
 		return functionName;
 	}

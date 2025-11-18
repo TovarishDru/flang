@@ -18,6 +18,11 @@ public class OperationNode extends AstNode {
 		this.operands = operands;
 	}
 
+	@Override
+    public Object accept(Interpreter interpreter) {
+        return interpreter.visitOperationNode(this);
+    }
+
 	public String getOperator() {
 		return operator;
 	}
