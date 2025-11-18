@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import models.token.Token;
 import models.token.TokenType;
+import stages.Interpreter;
 
 public class LiteralNode extends AstNode {
     private String value;
@@ -13,6 +14,12 @@ public class LiteralNode extends AstNode {
         super(NodeType.LITERAL, null, new ArrayList<>());
         this.value = token.getValue();
         this.type = token.getType();
+    }
+
+    public LiteralNode(String value, TokenType type) {
+        super(NodeType.LITERAL, null, new ArrayList<>());
+        this.value = value;
+        this.type = type;
     }
 
     @Override

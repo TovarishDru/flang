@@ -1,6 +1,8 @@
 package models.nodes;
 
 import java.util.ArrayList;
+import stages.Interpreter;
+
 
 public class CondNode extends AstNode {
 	private final AstNode condition;

@@ -1,9 +1,9 @@
 package models.nodes;
 
+import java.util.ArrayList;
+
 import models.nodes.NodeType;
 import stages.Interpreter;
-
-import java.util.ArrayList;
 
 public abstract class AstNode {
     protected NodeType type;

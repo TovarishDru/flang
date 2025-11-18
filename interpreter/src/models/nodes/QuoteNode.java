@@ -2,6 +2,8 @@ package models.nodes;
 
 import java.util.ArrayList;
 
+import stages.Interpreter;
+
 public class QuoteNode extends AstNode {
     private AstNode quotedExpr;
 

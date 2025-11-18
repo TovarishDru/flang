@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import models.nodes.FunctionNode;
 import models.nodes.NodeType;
+import stages.Interpreter;
 
 public class FunctionCallNode extends AstNode {
     String functionName;

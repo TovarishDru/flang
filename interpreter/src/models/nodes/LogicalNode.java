@@ -3,6 +3,8 @@ package models.nodes;
 import java.util.ArrayList;
 import java.util.List;
 
+import stages.Interpreter;
+
 public class LogicalNode extends AstNode {
 	private final String operator; // "and" | "or" | "xor"
 	private final AstNode left;

@@ -2,6 +2,8 @@ package models.nodes;
 
 import java.util.ArrayList;
 
+import stages.Interpreter;
+
 public class SetqNode extends AstNode {
 	private final String name;
 	private final AstNode value;

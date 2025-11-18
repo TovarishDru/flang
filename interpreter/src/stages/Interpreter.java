@@ -19,13 +19,13 @@ public class Interpreter {
         this.globalScope = globalScope;
     }
 
-    public Object InterpretProgNode(ProgNode progNode) {
+    public Object visitProgNode(ProgNode progNode) {
         Object result = null;
 
         for (AstNode childNode : progNode.getChildren()) {
             if (childNode instanceof ProgNode) {
                 Interpreter localInterpreter = new Interpreter(symbolTable, false);
-                result = localInterpreter.InterpretProgNode(childNode);
+                result = localInterpreter.visitProgNode((ProgNode) childNode);
             } else {
                 result = visit(childNode);
             }
@@ -76,28 +76,28 @@ public class Interpreter {
 
         switch (predicate) {
             case "isint" -> {
-				if (predicateNode.getElement().accept(this) instanceof Integer) {
+				if (predicateNode.getArgument().accept(this) instanceof Integer) {
 					return true;
 				} else return false;
 			}
 			case "isreal" -> {
-				if (predicateNode.getElement().accept(this) instanceof Double ||
-						predicateNode.getElement().accept(this) instanceof Integer) {
+				if (predicateNode.getArgument().accept(this) instanceof Double ||
+						predicateNode.getArgument().accept(this) instanceof Integer) {
 					return true;
 				} else return false;
 			}
 			case "isbool" -> {
-				if (predicateNode.getElement().accept(this) instanceof Boolean) {
+				if (predicateNode.getArgument().accept(this) instanceof Boolean) {
 					return true;
 				} else return false;
 			}
 			case "isnull" -> {
-				if (predicateNode.getElement() instanceof NullNode) {
+				if (predicateNode.getArgument().accept(this) == null) {
 					return true;
 				} else return false;
 			}
 			case "islist" -> {
-				if (predicateNode.getElement() instanceof ConsNode) {
+				if (predicateNode.getArgument() instanceof ConsNode) {
 					return true;
 				} else return false;
 			}
@@ -112,12 +112,12 @@ public class Interpreter {
 				.map(o -> ((Number) o).doubleValue())
 				.toList();
 
-        switch (oprator) {
+        switch (operator) {
             case "plus" -> {
-                Double result = numericOperands.stream().mapToDouble(Double::doubleValue).sum();
+                double result = numericOperands.stream().mapToDouble(Double::doubleValue).sum();
 
                 if (isInteger(result)) {
-                    result (Integer) result;
+                    return (int) result;
                 } else {
                     return result;
                 }
@@ -161,7 +161,7 @@ public class Interpreter {
 		return value == Math.floor(value);
 	}
 
-	public Object visitConditionNode(CondNode condNode) {
+	public Object visitCondNode(CondNode condNode) {
 
         AstNode condition = condNode.getCondition();
         AstNode action = condNode.getAction();
@@ -180,7 +180,7 @@ public class Interpreter {
 		boolean breakflag = false;
 		while ((boolean) visit(whileNode.getCondition())) {
 			if (breakflag) break;
-			for (ASTNode node : whileNode.getBody()) {
+			for (AstNode node : whileNode.getBody()) {
 				visit(node);
 				if (node instanceof BreakNode) {
 					breakflag = true;
@@ -196,17 +196,9 @@ public class Interpreter {
 		return null;
 	}
 
-	public Object visitNullNode(NullNode nullNode) {
-		return null;
-	}
-
-	public Object visitBoolNode(BooleanNode booleanNode) {
-		return booleanNode.getValue();
-	}
-
 	public Object visitNotNode(NotNode notNode) {
-		Object value = visit(notNode.getElement());
-		if (value instanceof boolean) {
+		Object value = visit(notNode.getArgument());
+		if (value instanceof Boolean) {
 			return !(boolean) value;
 		}
 		throw new RuntimeException("ERROR: EXPECTED BOOLEAN FOR NOT");
@@ -227,12 +219,12 @@ public class Interpreter {
 		};
 	}
 
-	public Object visitLogicalOperationNode(LogicalOperationNode logicalNode) {
+	public Object visitLogicalNode(LogicalNode logicalNode) {
 		Object left = visit(logicalNode.getChildren().get(0));
 		Object right = visit(logicalNode.getChildren().get(1));
 		String operator = logicalNode.getOperator();
 
-		if (left instanceof boolean && right instanceof boolean) {
+		if (left instanceof Boolean && right instanceof Boolean) {
 			boolean l = (boolean) left;
 			boolean r = (boolean) right;
 			return switch (operator) {
@@ -249,8 +241,8 @@ public class Interpreter {
 	}
 
 	public Object visitConsNode(ConsNode consNode) {
-		Object head = visit(consNode.getHead());
-		List<Object> tail = (List<Object>) visit(consNode.getTail());
+		Object head = visit(consNode.getItem());
+		List<Object> tail = (List<Object>) visit(consNode.getList());
 		List<Object> result = new ArrayList<>();
 		result.add(head);
 		result.addAll(tail);
@@ -265,8 +257,8 @@ public class Interpreter {
             ArrayList<String> parametersNames;
 
             if (function instanceof LambdaNode) {
-                LambdaNode function = (LambdaNode) function;
-                parametersNames = function.getParameters();
+                LambdaNode functionNode = (LambdaNode) function;
+                parametersNames = functionNode.getParameters();
 
                 for (int i = 0; i < parametersNames.size(); i++) {
                     Object parameterValue = visit(parametersValues.get(i));
@@ -274,10 +266,10 @@ public class Interpreter {
                 }
 
                 Interpreter funcInterpreter = new Interpreter(functionTable, false);
-                return funcInterpreter.visit(function.getBody());
+                return funcInterpreter.visit(functionNode.getBody());
             } else if (function instanceof FunctionNode) {
-                LambdaNode function = (FunctionNode) function;
-                parametersNames = function.getParameters();
+                FunctionNode functionNode = (FunctionNode) function;
+                parametersNames = functionNode.getParameters();
 
                 for (int i = 0; i < parametersNames.size(); i++) {
                     Object parameterValue = visit(parametersValues.get(i));
@@ -285,7 +277,7 @@ public class Interpreter {
                 }
 
                 Interpreter funcInterpreter = new Interpreter(functionTable, false);
-                return funcInterpreter.visit(function.getBody());
+                return funcInterpreter.visit(functionNode.getBody());
             }
         } catch (Exception e) {
 			throw new RuntimeException("ERROR: IN FUNCTION CALL " + e.getMessage());
@@ -295,7 +287,7 @@ public class Interpreter {
 
     public Object visitListNode(ListNode listNode) {
 		List<Object> values = new ArrayList<>();
-		for (ASTNode element : listNode.getElements()) {
+		for (AstNode element : listNode.getElements()) {
 			values.add(visit(element));
 		}
 		return values;
@@ -306,9 +298,9 @@ public class Interpreter {
 	}
 
     public Object visitEvalNode(EvalNode evalNode) {
-		Object evalResult = visit(evalNode.getNode());
-		if (evalResult instanceof ASTNode) {
-			return visit((ASTNode) evalResult);
+		Object evalResult = visit(evalNode.getExpr());
+		if (evalResult instanceof AstNode) {
+			return visit((AstNode) evalResult);
 		}
 		throw new RuntimeException("ERROR: UNEXPECTED ARGUMENT FOR EVAL");
 	}

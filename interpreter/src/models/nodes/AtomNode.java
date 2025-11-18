@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import models.token.Token;
 import models.token.TokenType;
+import stages.Interpreter;
 
 public class AtomNode extends AstNode {
     private String value;

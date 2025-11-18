@@ -1,6 +1,7 @@
 package models.nodes;
 
 import java.util.ArrayList;
+import stages.Interpreter;
 
 public class LambdaNode extends AstNode {
     ArrayList<String> parameters;

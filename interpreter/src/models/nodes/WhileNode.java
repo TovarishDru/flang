@@ -2,6 +2,8 @@ package models.nodes;
 
 import java.util.ArrayList;
 
+import stages.Interpreter;
+
 public class WhileNode extends AstNode {
 	private final AstNode condition;
 	private final ArrayList<AstNode> body;

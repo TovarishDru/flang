@@ -1,6 +1,7 @@
 package models.nodes;
 
 import java.util.ArrayList;
+import stages.Interpreter;
 
 public class ConsNode extends AstNode {
 	private final AstNode item;

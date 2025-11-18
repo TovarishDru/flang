@@ -1,6 +1,7 @@
 package models.nodes;
 
 import java.util.ArrayList;
+import stages.Interpreter;
 
 public class FunctionNode extends AstNode {
     String functionName;

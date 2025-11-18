@@ -2,6 +2,8 @@ package models.nodes;
 
 import java.util.ArrayList;
 
+import stages.Interpreter;
+
 public class PredicateNode extends AstNode {
 	private final String predicate; // "isint"|"isreal"|"isbool"|"isnull"|"isatom"|"islist"
 	private final AstNode argument;
