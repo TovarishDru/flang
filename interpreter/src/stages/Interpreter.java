@@ -2,6 +2,7 @@ package stages;
 
 import models.nodes.*;
 import models.symbol_table.SymbolTable;
+import models.token.TokenType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -161,6 +162,20 @@ public class Interpreter {
 		return value == Math.floor(value);
 	}
 
+    private TokenType convertObjectToTokenType(Object object) {
+        if (object instanceof Double) {
+            return TokenType.REAL;
+        } else if (object instanceof Integer) {
+           return TokenType.INTEGER;
+        } else if (object instanceof Boolean) {
+            return TokenType.BOOLEAN;
+        } else if (object == null) {
+            return TokenType.NULL;
+        } else {
+            throw new RuntimeException("ERROR: INCONVERTIBLE TO TOKENTYPE OBJECT");
+        }
+    }
+
 	public Object visitCondNode(CondNode condNode) {
 
         AstNode condition = condNode.getCondition();
@@ -262,7 +277,7 @@ public class Interpreter {
 
                 for (int i = 0; i < parametersNames.size(); i++) {
                     Object parameterValue = visit(parametersValues.get(i));
-                    functionTable.define(parametersNames.get(i), new LiteralNode(parameterValue.toString()));
+                    functionTable.define(parametersNames.get(i), new LiteralNode(parameterValue.toString(), convertObjectToTokenType(parameterValue)));
                 }
 
                 Interpreter funcInterpreter = new Interpreter(functionTable, false);
@@ -273,7 +288,7 @@ public class Interpreter {
 
                 for (int i = 0; i < parametersNames.size(); i++) {
                     Object parameterValue = visit(parametersValues.get(i));
-                    functionTable.define(parametersNames.get(i), new LiteralNode(parameterValue.toString()));
+                    functionTable.define(parametersNames.get(i), new LiteralNode(parameterValue.toString(), convertObjectToTokenType(parameterValue)));
                 }
 
                 Interpreter funcInterpreter = new Interpreter(functionTable, false);
@@ -328,4 +343,8 @@ public class Interpreter {
 		}
 		return list.subList(1, list.size());
 	}
+
+    public Object visitSetqNode(SetqNode setqNode) {
+        symbolTable.define(setqNode.getName(), new QuoteNode((AstNode) setqNode.getValue()));
+    }
 }
