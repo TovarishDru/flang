@@ -28,5 +28,5 @@ public enum NodeType {
 	TAIL,
 	WHILE,
 	VOID,
-	SETQ,
+	SETQ, CALL,
 }
