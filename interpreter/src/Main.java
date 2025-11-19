@@ -1,5 +1,6 @@
 import models.nodes.AstNode;
 import models.token.Token;
+import stages.Interpreter;
 import stages.Lexer;
 import stages.Parser;
 import stages.Semanter;
@@ -31,6 +32,11 @@ public class Main {
 
                 System.out.println("\nTree after optimization:");
                 printAst(ast, 0);
+
+                Interpreter interpreter = new Interpreter(parser.getGlobalScope(), true);
+                AstNode newast = (AstNode) ast.accept(interpreter);
+                System.out.println("\nInterpreting result:");
+                printAst(newast, 0);
             } catch (Exception e) {
                 System.out.println("Error while processing file " + args[i] + ": " + e.toString());
             }
