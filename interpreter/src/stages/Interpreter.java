@@ -2,7 +2,6 @@ package stages;
 
 import models.nodes.*;
 import models.symbol_table.SymbolTable;
-import models.token.TokenType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,11 +39,14 @@ public class Interpreter {
     }
 
     public Object visitAtomNode(AtomNode atomNode) {
-        try {
-            return visit(symbolTable.find(atomNode.getValue()));
-        } catch (Exception e) {
-            throw new RuntimeException("ERROR: " + e.getMessage());
+        String name = atomNode.getValue();
+        AstNode bound = symbolTable.find(name);
+
+        if (bound == null) {
+            throw new RuntimeException("ERROR: UNDEFINED VARIABLE " + name);
         }
+
+        return visit(bound);
     }
 
     public Object visitLiteralNode(LiteralNode literalNode) {
@@ -162,20 +164,6 @@ public class Interpreter {
 		return value == Math.floor(value);
 	}
 
-    private TokenType convertObjectToTokenType(Object object) {
-        if (object instanceof Double) {
-            return TokenType.REAL;
-        } else if (object instanceof Integer) {
-           return TokenType.INTEGER;
-        } else if (object instanceof Boolean) {
-            return TokenType.BOOLEAN;
-        } else if (object == null) {
-            return TokenType.NULL;
-        } else {
-            throw new RuntimeException("ERROR: INCONVERTIBLE TO TOKENTYPE OBJECT");
-        }
-    }
-
 	public Object visitCondNode(CondNode condNode) {
 
         AstNode condition = condNode.getCondition();
@@ -265,39 +253,45 @@ public class Interpreter {
 	}
 
     public Object visitFunctionCallNode(FunctionCallNode functionCallNode) {
-        try {
-            Object function = symbolTable.find(functionCallNode.getFunctionName());
-            SymbolTable functionTable = new SymbolTable(symbolTable);
-            ArrayList<AstNode> parametersValues = functionCallNode.getParameters();
-            ArrayList<String> parametersNames;
+        String funcName = functionCallNode.getFunctionName();
 
-            if (function instanceof LambdaNode) {
-                LambdaNode functionNode = (LambdaNode) function;
-                parametersNames = functionNode.getParameters();
+        AstNode funcNode = symbolTable.find(funcName);
+        if (funcNode == null) {
+            throw new RuntimeException("ERROR: UNDEFINED FUNCTION " + funcName);
+        }
 
-                for (int i = 0; i < parametersNames.size(); i++) {
-                    Object parameterValue = visit(parametersValues.get(i));
-                    functionTable.define(parametersNames.get(i), new LiteralNode(parameterValue.toString(), convertObjectToTokenType(parameterValue)));
-                }
+        ArrayList<String> paramNames;
+        AstNode body;
 
-                Interpreter funcInterpreter = new Interpreter(functionTable, false);
-                return funcInterpreter.visit(functionNode.getBody());
-            } else if (function instanceof FunctionNode) {
-                FunctionNode functionNode = (FunctionNode) function;
-                parametersNames = functionNode.getParameters();
+        if (funcNode instanceof FunctionNode fn) {
+            paramNames = fn.getParameters();
+            body = fn.getBody();
+        } else if (funcNode instanceof LambdaNode ln) {
+            paramNames = ln.getParameters();
+            body = ln.getBody();
+        } else {
+            throw new RuntimeException("ERROR: " + funcName + " is not a function or lambda");
+        }
 
-                for (int i = 0; i < parametersNames.size(); i++) {
-                    Object parameterValue = visit(parametersValues.get(i));
-                    functionTable.define(parametersNames.get(i), new LiteralNode(parameterValue.toString(), convertObjectToTokenType(parameterValue)));
-                }
+        ArrayList<AstNode> argExprs = functionCallNode.getParameters();
 
-                Interpreter funcInterpreter = new Interpreter(functionTable, false);
-                return funcInterpreter.visit(functionNode.getBody());
-            }
-        } catch (Exception e) {
-			throw new RuntimeException("ERROR: IN FUNCTION CALL " + e.getMessage());
-		}
-		return null;
+        if (argExprs.size() < paramNames.size()) {
+            throw new RuntimeException("ERROR: TOO FEW ARGUMENTS FOR " + funcName);
+        }
+        if (argExprs.size() > paramNames.size()) {
+            throw new RuntimeException("ERROR: TOO MANY ARGUMENTS FOR " + funcName);
+        }
+
+		SymbolTable functionTable = new SymbolTable(symbolTable);
+
+        for (int i = 0; i < paramNames.size(); i++) {
+            String paramName = paramNames.get(i);
+            AstNode argAst = argExprs.get(i);
+            functionTable.define(paramName, argAst);
+        }
+
+        Interpreter funcInterpreter = new Interpreter(functionTable, false);
+        return funcInterpreter.visit(body);
     }
 
     public Object visitListNode(ListNode listNode) {
@@ -343,8 +337,28 @@ public class Interpreter {
 		}
 		return list.subList(1, list.size());
 	}
-
     public Object visitSetqNode(SetqNode setqNode) {
-        symbolTable.define(setqNode.getName(), new QuoteNode((AstNode) setqNode.getValue()));
+        symbolTable.define(setqNode.getName(), new QuoteNode(setqNode.getValue()));
+        return null;
+    }
+
+    public Object visitLambdaNode(LambdaNode node) {
+        if (node.getArguments() == null || node.getArguments().isEmpty()) {
+            return node;
+        }
+
+        SymbolTable localTable = new SymbolTable(symbolTable);
+
+        ArrayList<String> params = node.getParameters();
+        ArrayList<AstNode> args = node.getArguments();
+
+        for (int i = 0; i < params.size(); i++) {
+            String name   = params.get(i);
+            AstNode argAst = (i < args.size()) ? args.get(i) : null;
+            localTable.define(name, argAst);
+        }
+
+        Interpreter inner = new Interpreter(localTable, false);
+        return inner.visit(node.getBody());
     }
 }

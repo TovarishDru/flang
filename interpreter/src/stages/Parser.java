@@ -19,6 +19,10 @@ public class Parser {
         this.globalScope = new SymbolTable(null);
     }
 
+    public SymbolTable getGlobalScope() {
+        return globalScope;
+    }
+
     public AstNode parseAst() throws Exception {
         ArrayList<AstNode> instructions = new ArrayList<>();
 
@@ -66,24 +70,32 @@ public class Parser {
         return switch (curToken.getType()) {
             case LPAREN -> parseParenthesizedExpr();
             case QUOTE -> parseQuoteWithoutBrackets();
+
             case INTEGER, REAL, NULL, BOOLEAN -> {
                 advance();
-                AstNode literalNode = new LiteralNode(curToken);
-                yield literalNode;
+                yield new LiteralNode(curToken);
             }
+
             case ATOM -> {
                 advance();
                 if (localScope.defined(curToken.getValue())) {
-                    AstNode atomNode = new AtomNode(curToken);
-                    yield atomNode;
+                    yield new AtomNode(curToken);
                 } else {
-                    throw new Exception("ERROR: UNDEFINED VARIABLE " + curToken.getValue() + " at line " + curToken.getLine());
+                    throw new Exception("ERROR: UNDEFINED VARIABLE " +
+                            curToken.getValue() + " at line " + curToken.getLine());
                 }
             }
+
+            case PLUS, MINUS, TIMES, DIVIDE -> {
+                advance();
+                yield new AtomNode(curToken);
+            }
+
             case LESS, LESSEQ, GREATER, GREATEREQ, EQUAL, NONEQUAL -> parseComparison();
-            case PLUS, MINUS, TIMES, DIVIDE -> parseOperation();
+
             default ->
-                    throw new Exception("ERROR: UNEXPECTED TOKEN: " + curToken.getValue() + " at line " + curToken.getLine());
+                    throw new Exception("ERROR: UNEXPECTED TOKEN: " +
+                            curToken.getValue() + " at line " + curToken.getLine());
         };
     }
 
@@ -132,43 +144,50 @@ public class Parser {
         consume(TokenType.LPAREN);
 
         Token operatorToken = peek();
-        if (operatorToken.getType() == TokenType.INTEGER || operatorToken.getType() == TokenType.REAL || operatorToken.getType() == TokenType.BOOLEAN) {
+
+        if (operatorToken.getType() == TokenType.INTEGER
+                || operatorToken.getType() == TokenType.REAL
+                || operatorToken.getType() == TokenType.BOOLEAN) {
             return parseLiteralList();
-        } else if (operatorToken.getType() == TokenType.ATOM) {
-            String operatorValue = operatorToken.getValue();
-            if (globalScope.defined(operatorValue) && globalScope.find(operatorValue).getType() == NodeType.FUNC) {
-                return parseFuncCall();
-            } else {
-                return parseLiteralList();
-            }
         }
 
-        return switch (operatorToken.getValue()) {
-            case "setq" -> parseSETQ();
-            case "func" -> parseFUNC();
-            case "cond" -> parseCOND();
-            case "prog" -> parsePROG();
+        String op = operatorToken.getValue();
+
+        return switch (op) {
+            case "setq"   -> parseSETQ();
+            case "func"   -> parseFUNC();
+            case "cond"   -> parseCOND();
+            case "prog"   -> parsePROG();
             case "plus", "minus", "times", "divide" -> parseOperation();
-            case "head" -> parseHeadOrTail("head");
-            case "tail" -> parseHeadOrTail("tail");
-            case "cons" -> parseCons();
-            case "while" -> parseWHILE();
+            case "head"   -> parseHeadOrTail("head");
+            case "tail"   -> parseHeadOrTail("tail");
+            case "cons"   -> parseCons();
+            case "while"  -> parseWHILE();
             case "return" -> parseRETURN();
-            case "break" -> parseBREAK();
+            case "break"  -> parseBREAK();
             case "isint", "isreal", "isbool", "isnull", "isatom", "islist" -> parsePredicate();
             case "equal", "nonequal", "less", "lesseq", "greater", "greatereq" -> parseComparison();
             case "and", "or", "xor" -> parseLogicalOperator();
-            case "not" -> parseNot();
-            case "lambda" -> parseLambda();
-            case ")" -> parseLiteralList();
-            case "(" -> {
+            case "not"    -> parseNot();
+            case "lambda" -> parseLambda();           // <--
+            case ")"      -> parseLiteralList();
+            case "("      -> {
                 AstNode node = parseParenthesizedExpr();
                 consume(TokenType.RPAREN);
                 yield node;
             }
-            case "quote" -> parseQuote();
-            case "eval" -> parseEval();
-            default -> parseFuncCall();
+            case "quote"  -> parseQuote();
+            case "eval"   -> parseEval();
+
+            default -> {
+                if (operatorToken.getType() == TokenType.ATOM
+                        && globalScope.defined(op)
+                        && globalScope.find(op).getType() == NodeType.FUNC) {
+                    yield parseFuncCall();
+                } else {
+                    yield parseLiteralList();
+                }
+            }
         };
     }
 
@@ -455,17 +474,15 @@ public class Parser {
         return lambdaBody;
     }
 
+
     private AstNode parseLambdaCall(LambdaNode lambdaBody) throws Exception {
         ArrayList<AstNode> args = new ArrayList<>();
 
-        for (int i = 0; i < lambdaBody.getParameters().size(); i++) {
+        while (peek().getType() != TokenType.RPAREN) {
             args.add(parseNode());
         }
 
-        if (peek().getType() != TokenType.RPAREN) {
-            throw new Exception("ERROR: TOO MANY ARGS FOR LAMBDA CALL " + peek().getValue() + " at line " + peek().getLine());
-        }
-
-        return new FunctionCallNode("lambda", args);
+        lambdaBody.setArguments(args);
+        return lambdaBody;
     }
 }
