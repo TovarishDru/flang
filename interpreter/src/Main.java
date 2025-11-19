@@ -33,10 +33,9 @@ public class Main {
                 System.out.println("\nTree after optimization:");
                 printAst(ast, 0);
 
-                Interpreter interpreter = new Interpreter(parser.getGlobalScope(), true);
-                AstNode newast = (AstNode) ast.accept(interpreter);
                 System.out.println("\nInterpreting result:");
-                printAst(newast, 0);
+                Interpreter interpreter = new Interpreter(parser.getGlobalScope(), true);
+                ast.accept(interpreter);
             } catch (Exception e) {
                 System.out.println("Error while processing file " + args[i] + ": " + e.toString());
             }
