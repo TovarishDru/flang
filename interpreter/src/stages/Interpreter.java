@@ -7,125 +7,118 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Interpreter {
-    private final SymbolTable symbolTable;
+	private final SymbolTable symbolTable;
 	private final boolean globalScope;
 
-    private Object visit(AstNode node) {
-        return node.accept(this);
-    }
+	private Object visit(AstNode node) {
+		return node.accept(this);
+	}
 
-    public Interpreter(SymbolTable symbolTable, boolean globalScope) {
-        this.symbolTable = symbolTable;
-        this.globalScope = globalScope;
-    }
+	public Interpreter(SymbolTable symbolTable, boolean globalScope) {
+		this.symbolTable = symbolTable;
+		this.globalScope = globalScope;
+	}
 
-    public Object visitProgNode(ProgNode progNode) {
-        Object result = null;
+	public Object visitProgNode(ProgNode progNode) {
+		Object result = null;
 
-        for (AstNode childNode : progNode.getChildren()) {
-            if (childNode instanceof ProgNode) {
-                Interpreter localInterpreter = new Interpreter(symbolTable, false);
-                result = localInterpreter.visitProgNode((ProgNode) childNode);
-            } else {
-                result = visit(childNode);
-            }
-
-            if (globalScope && result != null) {
-                System.err.println(result);
-            }
-        }
-
-        return result;
-    }
-
-    public Object visitAtomNode(AtomNode atomNode) {
-        String name = atomNode.getValue();
-        AstNode bound = symbolTable.find(name);
-
-        if (bound == null) {
-            throw new RuntimeException("ERROR: UNDEFINED VARIABLE " + name);
-        }
-
-        return visit(bound);
-    }
-
-    public Object visitLiteralNode(LiteralNode literalNode) {
-        String value = literalNode.getValue();
-
-        try {
-            if (value.contains(".")) {
-                return Double.parseDouble(value);
-            } else {
-                return Integer.parseInt(value);
-            }
-        } catch (NumberFormatException e) {
-            return value;
-        }
-    }
-
-    public Object visitOperationNode(OperationNode operationNode) {
-        String operator = operationNode.getOperator();
-        ArrayList<Object> evaluatedOperands = new ArrayList<>();
-
-        for (AstNode operand : operationNode.getChildren()) {
-            evaluatedOperands.add(visit(operand));
-        }
-
-        return evalOperation(operator, evaluatedOperands);
-    }
-
-    public Object visitPredicateNode(PredicateNode predicateNode) {
-        String predicate = predicateNode.getPredicate();
-
-        switch (predicate) {
-            case "isint" -> {
-				if (predicateNode.getArgument().accept(this) instanceof Integer) {
-					return true;
-				} else return false;
+		for (AstNode childNode : progNode.getChildren()) {
+			if (childNode instanceof ProgNode) {
+				Interpreter localInterpreter = new Interpreter(symbolTable, false);
+				result = localInterpreter.visitProgNode((ProgNode) childNode);
+			} else {
+				result = visit(childNode);
 			}
-			case "isreal" -> {
-				if (predicateNode.getArgument().accept(this) instanceof Double ||
-						predicateNode.getArgument().accept(this) instanceof Integer) {
-					return true;
-				} else return false;
-			}
-			case "isbool" -> {
-				if (predicateNode.getArgument().accept(this) instanceof Boolean) {
-					return true;
-				} else return false;
-			}
-			case "isnull" -> {
-				if (predicateNode.getArgument().accept(this) == null) {
-					return true;
-				} else return false;
-			}
-			case "islist" -> {
-				if (predicateNode.getArgument() instanceof ConsNode) {
-					return true;
-				} else return false;
-			}
-        }
 
-        Object value = visit(predicateNode.getArgument());
-		return value != null;
-    }
+			if (globalScope && result != null) {
+				System.err.println(result);
+			}
+		}
 
-    private Number evalOperation(String operator, List<Object> operands) {
-        List<Double> numericOperands = operands.stream()
+		return result;
+	}
+
+	public Object visitAtomNode(AtomNode atomNode) {
+		String name = atomNode.getValue();
+		AstNode bound = symbolTable.find(name);
+
+		if (bound == null) {
+			throw new RuntimeException("ERROR: UNDEFINED VARIABLE " + name);
+		}
+
+		return visit(bound);
+	}
+
+	public Object visitLiteralNode(LiteralNode literalNode) {
+		String value = literalNode.getValue();
+
+		switch (value) {
+			case "true" -> {
+				return Boolean.TRUE;
+			}
+			case "false" -> {
+				return Boolean.FALSE;
+			}
+			case "null" -> {
+				return null;
+			}
+		}
+
+		try {
+			if (value.contains(".")) {
+				return Double.parseDouble(value);
+			} else {
+				return Integer.parseInt(value);
+			}
+		} catch (NumberFormatException e) {
+			return value;
+		}
+	}
+
+
+	public Object visitOperationNode(OperationNode operationNode) {
+		String operator = operationNode.getOperator();
+		ArrayList<Object> evaluatedOperands = new ArrayList<>();
+
+		for (AstNode operand : operationNode.getChildren()) {
+			evaluatedOperands.add(visit(operand));
+		}
+
+		return evalOperation(operator, evaluatedOperands);
+	}
+
+	public Object visitPredicateNode(PredicateNode predicateNode) {
+		String predicate = predicateNode.getPredicate();
+		Object value = visit(predicateNode.getArgument());
+
+		return switch (predicate) {
+			case "isint" -> value instanceof Integer;
+			case "isreal" -> value instanceof Double || value instanceof Integer;
+			case "isbool" -> value instanceof Boolean;
+			case "isnull" -> value == null;
+			case "islist" -> value instanceof java.util.List<?>;
+			case "isatom" -> !(value instanceof java.util.List<?>);
+			default -> value != null;
+		};
+	}
+
+
+	private Number evalOperation(String operator, List<Object> operands) {
+		List<Double> numericOperands = operands.stream()
 				.map(o -> ((Number) o).doubleValue())
 				.toList();
 
-        switch (operator) {
-            case "plus" -> {
-                double result = numericOperands.stream().mapToDouble(Double::doubleValue).sum();
+		switch (operator) {
+			case "plus" -> {
+				double result = numericOperands.stream().mapToDouble(Double::doubleValue).sum();
 
-                if (isInteger(result)) {
-                    return (int) result;
-                } else {
-                    return result;
-                }
-            }
-            case "minus" -> {
+				if (isInteger(result)) {
+					return (int) result;
+				} else {
+					return result;
+				}
+			}
+			case "minus" -> {
 				double result = numericOperands.get(0);
 				for (int i = 1; i < numericOperands.size(); i++) {
 					result -= numericOperands.get(i);
@@ -158,24 +151,39 @@ public class Interpreter {
 			}
 			default -> throw new RuntimeException("ERROR: UNKNOWN OPERATOR " + operator);
 		}
-    }
+	}
 
-    private boolean isInteger(double value) {
+	private boolean isInteger(double value) {
 		return value == Math.floor(value);
 	}
 
+	// because we simplified it in semanter
 	public Object visitCondNode(CondNode condNode) {
+		java.util.List<AstNode> kids = condNode.getChildren();
 
-        AstNode condition = condNode.getCondition();
-        AstNode action = condNode.getAction();
-        AstNode defaultAction = condNode.getDefaultAction();
+		AstNode condition;
+		AstNode thenBranch;
+		AstNode elseBranch;
 
-		if ((boolean) condition.accept(this)) {
-			return action.accept(this);
-		} else try {
-			return defaultAction.accept(this);
-		} catch (NullPointerException e) {
-			return null;
+		if (kids != null && !kids.isEmpty()) {
+			condition   = kids.get(0);
+			thenBranch  = kids.size() >= 2 ? kids.get(1) : null;
+			elseBranch  = kids.size() >= 3 ? kids.get(2) : null;
+		} else {
+			condition   = condNode.getCondition();
+			thenBranch  = condNode.getAction();
+			elseBranch  = condNode.getDefaultAction();
+		}
+
+		Object condVal = visit(condition);
+		if (!(condVal instanceof Boolean)) {
+			throw new RuntimeException("ERROR: COND CONDITION IS NOT BOOLEAN");
+		}
+
+		if ((Boolean) condVal) {
+			return thenBranch != null ? visit(thenBranch) : null;
+		} else {
+			return elseBranch != null ? visit(elseBranch) : null;
 		}
 	}
 
@@ -207,7 +215,7 @@ public class Interpreter {
 		throw new RuntimeException("ERROR: EXPECTED BOOLEAN FOR NOT");
 	}
 
-    public Object visitComparisonNode(ComparisonNode comparisonNode) {
+	public Object visitComparisonNode(ComparisonNode comparisonNode) {
 		double left = ((Number) visit(comparisonNode.getLeftElement())).doubleValue();
 		double right = ((Number) visit(comparisonNode.getRightElement())).doubleValue();
 
@@ -223,78 +231,96 @@ public class Interpreter {
 	}
 
 	public Object visitLogicalNode(LogicalNode logicalNode) {
-		Object left = visit(logicalNode.getChildren().get(0));
-		Object right = visit(logicalNode.getChildren().get(1));
+		Object leftVal = visit(logicalNode.getChildren().get(0));
+		Object rightVal = visit(logicalNode.getChildren().get(1));
 		String operator = logicalNode.getOperator();
 
-		if (left instanceof Boolean && right instanceof Boolean) {
-			boolean l = (boolean) left;
-			boolean r = (boolean) right;
-			return switch (operator) {
-				case "and" -> l && r;
-				case "or" -> l || r;
-				case "xor" -> (l || r) && !(l && r);
-				case "nor" -> !(l || r);
-				case "nand" -> !(l && r);
-				case "xnor" -> !((l || r) && !(l && r));
-				default -> throw new RuntimeException("ERROR: UNKNOWN LOGICAL OPERATOR");
-			};
+		boolean l = asBoolean(leftVal, "LEFT");
+		boolean r = asBoolean(rightVal, "RIGHT");
+
+		return switch (operator) {
+			case "and" -> l && r;
+			case "or" -> l || r;
+			case "xor" -> (l || r) && !(l && r);
+			case "nor" -> !(l || r);
+			case "nand" -> !(l && r);
+			case "xnor" -> !((l || r) && !(l && r));
+			default -> throw new RuntimeException("ERROR: UNKNOWN LOGICAL OPERATOR " + operator);
+		};
+	}
+
+	private boolean asBoolean(Object value, String side) {
+		if (value instanceof Boolean b) {
+			return b;
 		}
-		throw new RuntimeException("ERROR: UNKNOWN LOGICAL OPERATOR " + operator);
+		if (value instanceof String s) {
+			if (s.equals("true") || s.equals("false")) {
+				return Boolean.parseBoolean(s);
+			}
+		}
+		throw new RuntimeException(
+				"ERROR: LOGICAL " + side + " OPERAND IS NOT BOOLEAN: " + value
+		);
 	}
 
 	public Object visitConsNode(ConsNode consNode) {
 		Object head = visit(consNode.getItem());
-		List<Object> tail = (List<Object>) visit(consNode.getList());
+		Object tailVal = visit(consNode.getList());
+
 		List<Object> result = new ArrayList<>();
 		result.add(head);
-		result.addAll(tail);
+		if (tailVal instanceof List<?> tailList) {
+			result.addAll(tailList);
+		} else if (tailVal != null) {
+			throw new RuntimeException("ERROR: CONS TAIL IS NOT A LIST");
+		}
+
 		return result;
 	}
 
-    public Object visitFunctionCallNode(FunctionCallNode functionCallNode) {
-        String funcName = functionCallNode.getFunctionName();
+	public Object visitFunctionCallNode(FunctionCallNode functionCallNode) {
+		String funcName = functionCallNode.getFunctionName();
 
-        AstNode funcNode = symbolTable.find(funcName);
-        if (funcNode == null) {
-            throw new RuntimeException("ERROR: UNDEFINED FUNCTION " + funcName);
-        }
+		AstNode funcNode = symbolTable.find(funcName);
+		if (funcNode == null) {
+			throw new RuntimeException("ERROR: UNDEFINED FUNCTION " + funcName);
+		}
 
-        ArrayList<String> paramNames;
-        AstNode body;
+		ArrayList<String> paramNames;
+		AstNode body;
 
-        if (funcNode instanceof FunctionNode fn) {
-            paramNames = fn.getParameters();
-            body = fn.getBody();
-        } else if (funcNode instanceof LambdaNode ln) {
-            paramNames = ln.getParameters();
-            body = ln.getBody();
-        } else {
-            throw new RuntimeException("ERROR: " + funcName + " is not a function or lambda");
-        }
+		if (funcNode instanceof FunctionNode fn) {
+			paramNames = fn.getParameters();
+			body = fn.getBody();
+		} else if (funcNode instanceof LambdaNode ln) {
+			paramNames = ln.getParameters();
+			body = ln.getBody();
+		} else {
+			throw new RuntimeException("ERROR: " + funcName + " is not a function or lambda");
+		}
 
-        ArrayList<AstNode> argExprs = functionCallNode.getParameters();
+		ArrayList<AstNode> argExprs = functionCallNode.getParameters();
 
-        if (argExprs.size() < paramNames.size()) {
-            throw new RuntimeException("ERROR: TOO FEW ARGUMENTS FOR " + funcName);
-        }
-        if (argExprs.size() > paramNames.size()) {
-            throw new RuntimeException("ERROR: TOO MANY ARGUMENTS FOR " + funcName);
-        }
+		if (argExprs.size() < paramNames.size()) {
+			throw new RuntimeException("ERROR: TOO FEW ARGUMENTS FOR " + funcName);
+		}
+		if (argExprs.size() > paramNames.size()) {
+			throw new RuntimeException("ERROR: TOO MANY ARGUMENTS FOR " + funcName);
+		}
 
 		SymbolTable functionTable = new SymbolTable(symbolTable);
 
-        for (int i = 0; i < paramNames.size(); i++) {
-            String paramName = paramNames.get(i);
-            AstNode argAst = argExprs.get(i);
-            functionTable.define(paramName, argAst);
-        }
+		for (int i = 0; i < paramNames.size(); i++) {
+			String paramName = paramNames.get(i);
+			AstNode argAst = argExprs.get(i);
+			functionTable.define(paramName, argAst);
+		}
 
-        Interpreter funcInterpreter = new Interpreter(functionTable, false);
-        return funcInterpreter.visit(body);
-    }
+		Interpreter funcInterpreter = new Interpreter(functionTable, false);
+		return funcInterpreter.visit(body);
+	}
 
-    public Object visitListNode(ListNode listNode) {
+	public Object visitListNode(ListNode listNode) {
 		List<Object> values = new ArrayList<>();
 		for (AstNode element : listNode.getElements()) {
 			values.add(visit(element));
@@ -302,11 +328,11 @@ public class Interpreter {
 		return values;
 	}
 
-    public Object visitQuoteNode(QuoteNode quoteNode) {
+	public Object visitQuoteNode(QuoteNode quoteNode) {
 		return quoteNode.getQuotedExpr();
 	}
 
-    public Object visitEvalNode(EvalNode evalNode) {
+	public Object visitEvalNode(EvalNode evalNode) {
 		Object evalResult = visit(evalNode.getExpr());
 		if (evalResult instanceof AstNode) {
 			return visit((AstNode) evalResult);
@@ -322,43 +348,68 @@ public class Interpreter {
 		return true;
 	}
 
-    public Object visitHeadNode(HeadNode headNode) {
-		List<Object> list = (List<Object>) visit(headNode.getListExpr());
+	public Object visitHeadNode(HeadNode headNode) {
+		Object value = visit(headNode.getListExpr());
+		if (!(value instanceof List<?> list)) {
+			throw new RuntimeException("ERROR: HEAD EXPECTED LIST");
+		}
 		if (list.isEmpty()) {
 			throw new RuntimeException("ERROR: EMPTY LIST");
 		}
-		return list.getFirst();
+		return list.get(0);
 	}
 
 	public Object visitTailNode(TailNode tailNode) {
-		List<Object> list = (List<Object>) visit(tailNode.getListExpr());
+		Object value = visit(tailNode.getListExpr());
+		if (!(value instanceof List<?> list)) {
+			throw new RuntimeException("ERROR: TAIL EXPECTED LIST");
+		}
 		if (list.isEmpty()) {
 			throw new RuntimeException("ERROR: EMPTY LIST");
 		}
 		return list.subList(1, list.size());
 	}
-    public Object visitSetqNode(SetqNode setqNode) {
-        symbolTable.define(setqNode.getName(), new QuoteNode(setqNode.getValue()));
-        return null;
-    }
 
-    public Object visitLambdaNode(LambdaNode node) {
-        if (node.getArguments() == null || node.getArguments().isEmpty()) {
-            return node;
-        }
+	public Object visitSetqNode(SetqNode setqNode) {
+		String name = setqNode.getName();
+		AstNode rhs = setqNode.getValue();
 
-        SymbolTable localTable = new SymbolTable(symbolTable);
+		AstNode toStore;
 
-        ArrayList<String> params = node.getParameters();
-        ArrayList<AstNode> args = node.getArguments();
+		if (rhs instanceof QuoteNode) {
+			toStore = rhs;
+		} else {
+			Object value = visit(rhs);
 
-        for (int i = 0; i < params.size(); i++) {
-            String name   = params.get(i);
-            AstNode argAst = (i < args.size()) ? args.get(i) : null;
-            localTable.define(name, argAst);
-        }
+			if (value instanceof AstNode ast) {
+				toStore = ast;
+			} else {
+				toStore = new RuntimeLiteralNode(value);
+			}
+		}
 
-        Interpreter inner = new Interpreter(localTable, false);
-        return inner.visit(node.getBody());
-    }
+		symbolTable.define(name, toStore);
+		return null;
+	}
+
+
+	public Object visitLambdaNode(LambdaNode node) {
+		if (node.getArguments() == null || node.getArguments().isEmpty()) {
+			return node;
+		}
+
+		SymbolTable localTable = new SymbolTable(symbolTable);
+
+		ArrayList<String> params = node.getParameters();
+		ArrayList<AstNode> args = node.getArguments();
+
+		for (int i = 0; i < params.size(); i++) {
+			String name = params.get(i);
+			AstNode argAst = (i < args.size()) ? args.get(i) : null;
+			localTable.define(name, argAst);
+		}
+
+		Interpreter inner = new Interpreter(localTable, false);
+		return inner.visit(node.getBody());
+	}
 }
