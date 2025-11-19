@@ -176,12 +176,25 @@ public class Parser {
 			case "equal", "nonequal", "less", "lesseq", "greater", "greatereq" -> parseComparison();
 			case "and", "or", "xor" -> parseLogicalOperator();
 			case "not" -> parseNot();
-			case "lambda" -> parseLambda();           // <--
+			case "lambda" -> parseLambda();
 			case ")" -> parseLiteralList();
 			case "(" -> {
-				AstNode node = parseParenthesizedExpr();
+				AstNode calleeExpr = parseParenthesizedExpr();
+
+				ArrayList<AstNode> args = new ArrayList<>();
+				while (!isAtEnd() && !check(TokenType.RPAREN)) {
+					args.add(parseNode());
+				}
+
+				if (isAtEnd()) {
+					throw new Exception("ERROR: MISSING ')' IN CALL EXPRESSION");
+				}
+
 				consume(TokenType.RPAREN);
-				yield node;
+				if (args.isEmpty()) {
+					yield calleeExpr;
+				}
+				yield new CallNode(calleeExpr, args);
 			}
 			case "quote" -> parseQuote();
 			case "eval" -> parseEval();
@@ -192,7 +205,16 @@ public class Parser {
 						&& globalScope.find(op).getType() == NodeType.FUNC) {
 					yield parseFuncCall();
 				} else {
-					yield parseLiteralList();
+					AstNode callee = parseNode();
+					ArrayList<AstNode> args = new ArrayList<>();
+					while (!isAtEnd() && !check(TokenType.RPAREN)) {
+						args.add(parseNode());
+					}
+					if (isAtEnd()) {
+						throw new Exception("ERROR: MISSING ')' IN CALL EXPRESSION");
+					}
+					consume(TokenType.RPAREN);
+					yield new CallNode(callee, args);
 				}
 			}
 		};

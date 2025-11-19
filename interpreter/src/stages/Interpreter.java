@@ -157,7 +157,22 @@ public class Interpreter {
 		return value == Math.floor(value);
 	}
 
-	// because we simplified it in semanter
+	private Object evalCondBranch(AstNode branch) {
+		if (branch == null) return null;
+
+		if (branch instanceof AtomNode atom) {
+			String name = atom.getValue();
+			if (name.equals("plus") ||
+					name.equals("minus") ||
+					name.equals("times") ||
+					name.equals("divide")) {
+				return name;
+			}
+		}
+
+		return visit(branch);
+	}
+
 	public Object visitCondNode(CondNode condNode) {
 		java.util.List<AstNode> kids = condNode.getChildren();
 
@@ -166,13 +181,13 @@ public class Interpreter {
 		AstNode elseBranch;
 
 		if (kids != null && !kids.isEmpty()) {
-			condition   = kids.get(0);
-			thenBranch  = kids.size() >= 2 ? kids.get(1) : null;
-			elseBranch  = kids.size() >= 3 ? kids.get(2) : null;
+			condition  = kids.get(0);
+			thenBranch = kids.size() >= 2 ? kids.get(1) : null;
+			elseBranch = kids.size() >= 3 ? kids.get(2) : null;
 		} else {
-			condition   = condNode.getCondition();
-			thenBranch  = condNode.getAction();
-			elseBranch  = condNode.getDefaultAction();
+			condition  = condNode.getCondition();
+			thenBranch = condNode.getAction();
+			elseBranch = condNode.getDefaultAction();
 		}
 
 		Object condVal = visit(condition);
@@ -181,21 +196,19 @@ public class Interpreter {
 		}
 
 		if ((Boolean) condVal) {
-			return thenBranch != null ? visit(thenBranch) : null;
+			return evalCondBranch(thenBranch);
 		} else {
-			return elseBranch != null ? visit(elseBranch) : null;
+			return evalCondBranch(elseBranch);
 		}
 	}
 
 	public Object visitWhileNode(WhileNode whileNode) {
-		boolean breakflag = false;
 		while ((boolean) visit(whileNode.getCondition())) {
-			if (breakflag) break;
 			for (AstNode node : whileNode.getBody()) {
-				visit(node);
-				if (node instanceof BreakNode) {
-					breakflag = true;
-					break;
+				Object result = visit(node);
+
+				if (result instanceof BreakNode) {
+					return null;
 				}
 			}
 		}
@@ -329,15 +342,41 @@ public class Interpreter {
 	}
 
 	public Object visitQuoteNode(QuoteNode quoteNode) {
-		return quoteNode.getQuotedExpr();
+		return evalQuoted(quoteNode.getQuotedExpr());
+	}
+
+	private Object evalQuoted(AstNode node) {
+		switch (node) {
+			case ListNode listNode -> {
+				List<Object> result = new ArrayList<>();
+				for (AstNode elem : listNode.getElements()) {
+					result.add(evalQuoted(elem));
+				}
+				return result;
+			}
+			case LiteralNode lit -> {
+				return visitLiteralNode(lit);
+			}
+			case AtomNode atom -> {
+				return atom.getValue();
+			}
+			case QuoteNode q -> {
+				return evalQuoted(q.getQuotedExpr());
+			}
+			case null, default -> {
+				return node;
+			}
+		}
 	}
 
 	public Object visitEvalNode(EvalNode evalNode) {
 		Object evalResult = visit(evalNode.getExpr());
-		if (evalResult instanceof AstNode) {
-			return visit((AstNode) evalResult);
+
+		if (evalResult instanceof AstNode ast) {
+			return visit(ast);
 		}
-		throw new RuntimeException("ERROR: UNEXPECTED ARGUMENT FOR EVAL");
+
+		return evalResult;
 	}
 
 	public Object visitReturnNode(ReturnNode returnNode) {
@@ -345,12 +384,12 @@ public class Interpreter {
 	}
 
 	public Object visitBreakNode(BreakNode breakNode) {
-		return true;
+		return breakNode;
 	}
 
 	public Object visitHeadNode(HeadNode headNode) {
 		Object value = visit(headNode.getListExpr());
-		if (!(value instanceof List<?> list)) {
+		if (!(value instanceof java.util.List<?> list)) {
 			throw new RuntimeException("ERROR: HEAD EXPECTED LIST");
 		}
 		if (list.isEmpty()) {
@@ -361,7 +400,7 @@ public class Interpreter {
 
 	public Object visitTailNode(TailNode tailNode) {
 		Object value = visit(tailNode.getListExpr());
-		if (!(value instanceof List<?> list)) {
+		if (!(value instanceof java.util.List<?> list)) {
 			throw new RuntimeException("ERROR: TAIL EXPECTED LIST");
 		}
 		if (list.isEmpty()) {
@@ -412,4 +451,53 @@ public class Interpreter {
 		Interpreter inner = new Interpreter(localTable, false);
 		return inner.visit(node.getBody());
 	}
+
+	public Object visitCallNode(CallNode node) {
+		Object fnValue = visit(node.getCallee());
+
+		if (fnValue instanceof String s) {
+			switch (s) {
+				case "plus", "minus", "times", "divide" -> {
+					ArrayList<Object> evaluatedOperands = new ArrayList<>();
+					for (AstNode arg : node.getArguments()) {
+						evaluatedOperands.add(visit(arg));
+					}
+					return evalOperation(s, evaluatedOperands);
+				}
+				default -> throw new RuntimeException("ERROR: expression does not evaluate to a function");
+			}
+		}
+
+		ArrayList<String> paramNames;
+		AstNode body;
+
+		if (fnValue instanceof LambdaNode lambda) {
+			paramNames = lambda.getParameters();
+			body = lambda.getBody();
+		} else if (fnValue instanceof FunctionNode func) {
+			paramNames = func.getParameters();
+			body = func.getBody();
+		} else {
+			throw new RuntimeException("ERROR: expression does not evaluate to a function");
+		}
+
+		ArrayList<AstNode> argExprs = node.getArguments();
+
+		if (argExprs.size() != paramNames.size()) {
+			throw new RuntimeException("ERROR: function expected " +
+					paramNames.size() + " args, got " + argExprs.size());
+		}
+
+		SymbolTable functionTable = new SymbolTable(symbolTable);
+
+		for (int i = 0; i < paramNames.size(); i++) {
+			String paramName = paramNames.get(i);
+			AstNode argAst = argExprs.get(i);
+			functionTable.define(paramName, argAst);
+		}
+
+		Interpreter funcInterpreter = new Interpreter(functionTable, false);
+		return funcInterpreter.visit(body);
+	}
+
 }
