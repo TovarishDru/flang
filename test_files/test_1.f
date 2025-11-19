@@ -2,12 +2,15 @@
 x
 
 ((lambda (a b) (plus a b)) 55 -176)
+(setq myFunc (lambda (p) (cond (less p 0) plus minus)))
+((myFunc -1) 1 2)
+(((lambda (p) (cond (less p 0) plus minus)) 1) 1 2)
 
 (plus 5 3)
 
 (and true false)
 
-(setq  y '(plus -1.35 2.15))
+(setq  y (plus -1.35 2.15))
 (eval y)
 
 (func  square (n) (times n n))
@@ -26,8 +29,15 @@ x
 (cons 1 (cons 2 (cons 3 null)))
 
 (head '(a b c))
-
+(tail '(234 321 222))
+(head (tail '(n y n)))
+(head (cons 'h (cons 'nothead (cons 'nothead null))))
+(head '(h nothead nothead))
 (and (less 1 2) (greater 5 3))
+
+(prog (x)
+  (setq x 'hello)
+  (cons x null))
 
 (prog (x)
   (setq x 0)
