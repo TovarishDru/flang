@@ -43,9 +43,9 @@ public class Semanter {
         return sb.toString();
     }
 
-    public void optimize(AstNode root) {
-        if (root == null) return;
-        root = performOptimizations(root);
+    public AstNode optimize(AstNode root) {
+        if (root == null) return null;
+        return performOptimizations(root);
     }
 
     private AstNode performOptimizations(AstNode root) {
@@ -227,6 +227,7 @@ public class Semanter {
     private String readOperatorWord(AstNode node) {
         if (node instanceof OperationNode op) return op.getOperator();      // "plus"/"and"/...
         if (node instanceof ComparisonNode cmp) return cmp.getComparison();  // "less"/"equal"/...
+        if (node instanceof LogicalNode log) return log.getOperator();
         return null;
     }
 
