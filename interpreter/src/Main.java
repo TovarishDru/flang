@@ -28,13 +28,13 @@ public class Main {
 
                 System.out.println("\nOptimization logs:");
                 Semanter semanter = new Semanter();
-                semanter.optimize(ast);
+                ast = semanter.optimize(ast);
 
                 System.out.println("\nTree after optimization:");
                 printAst(ast, 0);
 
-                System.out.println("\nInterpreting result:");
                 Interpreter interpreter = new Interpreter(parser.getGlobalScope(), true);
+                System.out.println("\nInterpreting result:");
                 ast.accept(interpreter);
             } catch (Exception e) {
                 System.out.println("Error while processing file " + args[i] + ": " + e.toString());
