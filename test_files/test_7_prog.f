@@ -1,0 +1,25 @@
+(prog (a b) 
+    (setq a 5) 
+    (setq b 6) 
+    (plus a b)
+)
+
+(prog (n) 
+    (setq n 3) 
+    (return (times n n)) 
+    (plus n 10)
+)
+
+(prog (x) 
+    (setq x 'hello) 
+    (cons x null)
+)
+
+(prog (x)
+    (setq x 0)
+    (while (less x 10)
+        (cond (equal x 5) (break))
+        (setq x (plus x 1))
+    )
+    x
+)

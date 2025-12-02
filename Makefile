@@ -1,7 +1,7 @@
 SRC_DIR = interpreter/src
 BIN_DIR = bin
 MAIN_CLASS = Main
-TEST_FILE = test_files/test_1.f
+TEST_FILE ?= test_files/test_1.f
 
 SOURCES := $(shell find $(SRC_DIR) -name "*.java")
 
