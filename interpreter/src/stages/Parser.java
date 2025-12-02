@@ -200,22 +200,19 @@ public class Parser {
 			case "eval" -> parseEval();
 
 			default -> {
-				if (operatorToken.getType() == TokenType.ATOM
-						&& globalScope.defined(op)
-						&& globalScope.find(op).getType() == NodeType.FUNC) {
-					yield parseFuncCall();
-				} else {
-					AstNode callee = parseNode();
-					ArrayList<AstNode> args = new ArrayList<>();
-					while (!isAtEnd() && !check(TokenType.RPAREN)) {
-						args.add(parseNode());
-					}
-					if (isAtEnd()) {
-						throw new Exception("ERROR: MISSING ')' IN CALL EXPRESSION");
-					}
-					consume(TokenType.RPAREN);
-					yield new CallNode(callee, args);
+				AstNode callee = parseNode();
+				ArrayList<AstNode> args = new ArrayList<>();
+
+				while (!isAtEnd() && !check(TokenType.RPAREN)) {
+					args.add(parseNode());
 				}
+
+				if (isAtEnd()) {
+					throw new Exception("ERROR: MISSING ')' IN CALL EXPRESSION");
+				}
+
+				consume(TokenType.RPAREN);
+				yield new CallNode(callee, args);
 			}
 		};
 	}
@@ -283,42 +280,6 @@ public class Parser {
 
 		consume(TokenType.RPAREN);
 		return new ListNode(elements);
-	}
-
-	private AstNode parseFuncCall() throws Exception {
-		String functionName = peek().getValue();
-		int line = peek().getLine();
-
-		if (!globalScope.defined(functionName)) {
-			throw new Exception("ERROR: UNDEFINED FUNCTION " + functionName + " at line " + line);
-		}
-
-		AstNode fnNode = globalScope.find(functionName);
-		if (fnNode == null || fnNode.getType() != NodeType.FUNC) {
-			throw new Exception("ERROR: " + functionName + " IS NOT A FUNCTION at line: " + line);
-		}
-		FunctionNode functionNode = (FunctionNode) fnNode;
-
-		advance(); // consume name
-
-		ArrayList<AstNode> operands = new ArrayList<>();
-		while (!isAtEnd() && !check(TokenType.RPAREN)) {
-			operands.add(parseNode());
-		}
-
-		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN FUNCTION CALL " + functionName +
-					" at line: " + line);
-		}
-
-		int expectedParams = functionNode.getParameters() == null ? 0 : functionNode.getParameters().size();
-		if (operands.size() != expectedParams) {
-			throw new Exception("ERROR: INCORRECT NUMBER OF PARAMETERS FOR FUNCTION " + functionName +
-					" EXPECTED-GOT: " + expectedParams + "-" + operands.size() + " at line: " + line);
-		}
-
-		consume(TokenType.RPAREN);
-		return new FunctionCallNode(functionName, operands);
 	}
 
 	private AstNode parseSETQ() throws Exception {
@@ -444,7 +405,6 @@ public class Parser {
 
 	private AstNode parseWHILE() throws Exception {
 		advance();
-		consume(TokenType.LPAREN);
 		AstNode condition = parseNode();
 		ArrayList<AstNode> body = new ArrayList<>();
 		while (!isAtEnd() && !check(TokenType.RPAREN)) {
@@ -536,26 +496,6 @@ public class Parser {
 
 		localScope = prev;
 
-		LambdaNode lambdaBody = new LambdaNode(params, body);
-
-		if (!isAtEnd() && peek().getType() != TokenType.RPAREN) {
-			return parseLambdaCall(lambdaBody);
-		}
-
-		return lambdaBody;
-	}
-
-	private AstNode parseLambdaCall(LambdaNode lambdaBody) throws Exception {
-		ArrayList<AstNode> args = new ArrayList<>();
-
-		while (!isAtEnd() && !check(TokenType.RPAREN)) {
-			args.add(parseNode());
-		}
-		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN LAMBDA CALL");
-		}
-
-		lambdaBody.setArguments(args);
-		return lambdaBody;
+		return new LambdaNode(params, body);
 	}
 }

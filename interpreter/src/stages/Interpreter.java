@@ -506,45 +506,11 @@ public class Interpreter {
 
 
 	public Object visitLambdaNode(LambdaNode node) {
-		if (node.getArguments() == null || node.getArguments().isEmpty()) {
-			return node;
-		}
-
-		SymbolTable localTable = new SymbolTable(symbolTable);
-
-		ArrayList<String> params = node.getParameters();
-		ArrayList<AstNode> args = node.getArguments();
-
-		for (int i = 0; i < params.size(); i++) {
-			String name = params.get(i);
-			AstNode argAst = (i < args.size()) ? args.get(i) : null;
-
-			Object argVal = argAst == null ? null : visit(argAst);
-			AstNode stored;
-			if (argVal instanceof AstNode ast) {
-				stored = ast;
-			} else {
-				stored = new RuntimeLiteralNode(argVal);
-			}
-
-			localTable.define(name, stored);
-		}
-
-		Interpreter inner = new Interpreter(localTable, false);
-		Object result = inner.visit(node.getBody());
-
-		if (result instanceof ReturnNode rn) {
-			return inner.visit(rn.getValue());
-		}
-
-		return result;
+		return node;
 	}
 
 	public Object visitCallNode(CallNode node) {
 		Object fnValue = visit(node.getCallee());
-
-		ArrayList<String> paramNames;
-		AstNode body;
 
 		if (fnValue instanceof String s) {
 			switch (s) {
@@ -557,7 +523,12 @@ public class Interpreter {
 				}
 				default -> throw new RuntimeException("ERROR: expression does not evaluate to a function");
 			}
-		} else if (fnValue instanceof LambdaNode lambda) {
+		}
+
+		ArrayList<String> paramNames;
+		AstNode body;
+
+		if (fnValue instanceof LambdaNode lambda) {
 			paramNames = lambda.getParameters();
 			body = lambda.getBody();
 		} else if (fnValue instanceof FunctionNode func) {
@@ -568,25 +539,20 @@ public class Interpreter {
 		}
 
 		ArrayList<AstNode> argExprs = node.getArguments();
-
 		if (argExprs.size() != paramNames.size()) {
 			throw new RuntimeException("ERROR: function expected " +
 					paramNames.size() + " args, got " + argExprs.size());
 		}
 
 		SymbolTable functionTable = new SymbolTable(symbolTable);
-
 		for (int i = 0; i < paramNames.size(); i++) {
 			String paramName = paramNames.get(i);
 			AstNode argAst = argExprs.get(i);
 
-			Object argVal = visit(argAst);    // снова: вычисляем
-			AstNode stored;
-			if (argVal instanceof AstNode ast) {
-				stored = ast;
-			} else {
-				stored = new RuntimeLiteralNode(argVal);
-			}
+			Object argVal = visit(argAst);
+			AstNode stored = (argVal instanceof AstNode ast)
+					? ast
+					: new RuntimeLiteralNode(argVal);
 
 			functionTable.define(paramName, stored);
 		}
@@ -609,7 +575,7 @@ public class Interpreter {
 			case "isbool" -> value instanceof Boolean;
 			case "isnull" -> value == null;
 			case "islist" -> value instanceof java.util.List<?>;
-			case "isatom" -> !(value instanceof java.util.List<?>);
+			case "isatom" -> value instanceof String;
 			default -> value != null;
 		};
 	}
