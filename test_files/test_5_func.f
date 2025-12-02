@@ -23,7 +23,7 @@ x
         (cond
             (equal num 0)
             acc
-            (times acc (fac_helper (minus num 1) acc))
+            (fac_helper (minus num 1) (times acc num))
         )
     )
 
@@ -31,3 +31,6 @@ x
 )
 
 (fac 5)
+
+(func makeList (A) (cons A (cons A ())))
+(makeList 1)
