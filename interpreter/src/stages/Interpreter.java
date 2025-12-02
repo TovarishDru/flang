@@ -30,22 +30,22 @@ public class Interpreter {
 				result = visit(childNode);
 			}
 
-			if (result instanceof ReturnNode rn) {
-				Object value = visit(rn.getValue());
-
-				if (globalScope && value != null) {
-					System.err.println(value);
-				}
-				return value;
-			}
-
-			if (globalScope && result != null) {
+			if (globalScope && shouldPrintResult(childNode)) {
 				System.err.println(result);
 			}
 		}
 
 		return result;
 	}
+
+	private boolean shouldPrintResult(AstNode node) {
+		NodeType t = node.getType();
+		return switch (t) {
+			case SETQ, FUNC, WHILE, BREAK -> false;
+			default -> true;
+		};
+	}
+
 
 	public Object visitAtomNode(AtomNode atomNode) {
 		String name = atomNode.getValue();
