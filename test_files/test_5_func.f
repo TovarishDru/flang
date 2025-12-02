@@ -14,6 +14,10 @@
 (test_glob)
 x
 
+(func change_glob () (setq x (plus x 5)))
+(change_glob)
+x
+
 (func fac (num)
     (func fac_helper (num acc)
         (cond
