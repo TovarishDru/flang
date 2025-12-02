@@ -19,3 +19,6 @@ t
 
 (setq a (times x y))
 a
+
+(setq b (divide x y))
+b

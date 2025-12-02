@@ -12,7 +12,7 @@
 
 (prog (x) 
     (setq x 'hello) 
-    (cons x null)
+    (cons x '(world))
 )
 
 (prog (x)

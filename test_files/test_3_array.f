@@ -9,5 +9,3 @@
 (head (cons 'h (cons 'nothead (cons 'nothead null))))
 
 (head '(h nothead nothead))
-
-(isnull '())
