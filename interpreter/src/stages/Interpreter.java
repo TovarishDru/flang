@@ -30,6 +30,15 @@ public class Interpreter {
 				result = visit(childNode);
 			}
 
+			if (result instanceof ReturnNode rn) {
+				Object value = visit(rn.getValue());
+
+				if (globalScope && value != null) {
+					System.err.println(value);
+				}
+				return value;
+			}
+
 			if (globalScope && result != null) {
 				System.err.println(result);
 			}
@@ -44,6 +53,18 @@ public class Interpreter {
 
 		if (bound == null) {
 			throw new RuntimeException("ERROR: UNDEFINED VARIABLE " + name);
+		}
+
+		if (bound == atomNode) {
+			throw new RuntimeException("ERROR: SELF-REFERENTIAL VARIABLE " + name);
+		}
+
+		if (bound instanceof RuntimeLiteralNode rl) {
+			return rl.getValue();
+		}
+
+		if (bound instanceof FunctionNode || bound instanceof LambdaNode) {
+			return bound;
 		}
 
 		return visit(bound);
@@ -130,6 +151,9 @@ public class Interpreter {
 				if (result instanceof BreakNode) {
 					return null;
 				}
+				if (result instanceof ReturnNode) {
+					return result;
+				}
 			}
 		}
 		return null;
@@ -209,11 +233,27 @@ public class Interpreter {
 		for (int i = 0; i < paramNames.size(); i++) {
 			String paramName = paramNames.get(i);
 			AstNode argAst = argExprs.get(i);
-			functionTable.define(paramName, argAst);
+
+			Object argVal = visit(argAst);
+
+			AstNode stored;
+			if (argVal instanceof AstNode ast) {
+				stored = ast;
+			} else {
+				stored = new RuntimeLiteralNode(argVal);
+			}
+
+			functionTable.define(paramName, stored);
 		}
 
 		Interpreter funcInterpreter = new Interpreter(functionTable, false);
-		return funcInterpreter.visit(body);
+		Object result = funcInterpreter.visit(body);
+
+		if (result instanceof ReturnNode rn) {
+			return funcInterpreter.visit(rn.getValue());
+		}
+
+		return result;
 	}
 
 	public Object visitListNode(ListNode listNode) {
@@ -418,7 +458,7 @@ public class Interpreter {
 
 
 	public Object visitReturnNode(ReturnNode returnNode) {
-		return visit(returnNode.getValue());
+		return returnNode;
 	}
 
 	public Object visitBreakNode(BreakNode breakNode) {
@@ -478,15 +518,33 @@ public class Interpreter {
 		for (int i = 0; i < params.size(); i++) {
 			String name = params.get(i);
 			AstNode argAst = (i < args.size()) ? args.get(i) : null;
-			localTable.define(name, argAst);
+
+			Object argVal = argAst == null ? null : visit(argAst);
+			AstNode stored;
+			if (argVal instanceof AstNode ast) {
+				stored = ast;
+			} else {
+				stored = new RuntimeLiteralNode(argVal);
+			}
+
+			localTable.define(name, stored);
 		}
 
 		Interpreter inner = new Interpreter(localTable, false);
-		return inner.visit(node.getBody());
+		Object result = inner.visit(node.getBody());
+
+		if (result instanceof ReturnNode rn) {
+			return inner.visit(rn.getValue());
+		}
+
+		return result;
 	}
 
 	public Object visitCallNode(CallNode node) {
 		Object fnValue = visit(node.getCallee());
+
+		ArrayList<String> paramNames;
+		AstNode body;
 
 		if (fnValue instanceof String s) {
 			switch (s) {
@@ -499,12 +557,7 @@ public class Interpreter {
 				}
 				default -> throw new RuntimeException("ERROR: expression does not evaluate to a function");
 			}
-		}
-
-		ArrayList<String> paramNames;
-		AstNode body;
-
-		if (fnValue instanceof LambdaNode lambda) {
+		} else if (fnValue instanceof LambdaNode lambda) {
 			paramNames = lambda.getParameters();
 			body = lambda.getBody();
 		} else if (fnValue instanceof FunctionNode func) {
@@ -526,11 +579,26 @@ public class Interpreter {
 		for (int i = 0; i < paramNames.size(); i++) {
 			String paramName = paramNames.get(i);
 			AstNode argAst = argExprs.get(i);
-			functionTable.define(paramName, argAst);
+
+			Object argVal = visit(argAst);    // снова: вычисляем
+			AstNode stored;
+			if (argVal instanceof AstNode ast) {
+				stored = ast;
+			} else {
+				stored = new RuntimeLiteralNode(argVal);
+			}
+
+			functionTable.define(paramName, stored);
 		}
 
 		Interpreter funcInterpreter = new Interpreter(functionTable, false);
-		return funcInterpreter.visit(body);
+		Object result = funcInterpreter.visit(body);
+
+		if (result instanceof ReturnNode rn) {
+			return funcInterpreter.visit(rn.getValue());
+		}
+
+		return result;
 	}
 
 
