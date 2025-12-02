@@ -31,7 +31,12 @@ public class Interpreter {
 			}
 
 			if (globalScope && shouldPrintResult(childNode)) {
-				System.err.println(result);
+				NodeType t = childNode.getType();
+				if (result != null ||
+						t == NodeType.ATOM ||
+						t == NodeType.QUOTE) {
+					System.err.println(result);
+				}
 			}
 		}
 
@@ -41,7 +46,7 @@ public class Interpreter {
 	private boolean shouldPrintResult(AstNode node) {
 		NodeType t = node.getType();
 		return switch (t) {
-			case SETQ, FUNC, WHILE, BREAK -> false;
+			case SETQ, FUNC, WHILE, BREAK, RETURN, PROG -> false;
 			default -> true;
 		};
 	}
@@ -237,7 +242,10 @@ public class Interpreter {
 
 	public Object visitEvalNode(EvalNode evalNode) {
 		Object value = visit(evalNode.getExpr());
+		return evalValue(value);
+	}
 
+	private Object evalValue(Object value) {
 		if (value instanceof AstNode ast) {
 			return visit(ast);
 		}
@@ -263,6 +271,7 @@ public class Interpreter {
 		}
 
 		Object head = list.get(0);
+
 		String funcName;
 
 		if (head instanceof String s) {
@@ -347,15 +356,7 @@ public class Interpreter {
 
 			case "eval" -> {
 				checkArity(funcName, args, 1);
-				Object value = args.get(0);
-				if (value instanceof AstNode ast) {
-					return visit(ast);
-				}
-
-				if (value instanceof List<?> list) {
-					return evalListAsProgram(list);
-				}
-				return value;
+				return evalValue(args.get(0));
 			}
 		}
 
