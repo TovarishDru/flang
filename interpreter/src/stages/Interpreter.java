@@ -347,7 +347,15 @@ public class Interpreter {
 
 			case "eval" -> {
 				checkArity(funcName, args, 1);
-				return evalValue(args.get(0));
+				Object value = args.get(0);
+				if (value instanceof AstNode ast) {
+					return visit(ast);
+				}
+
+				if (value instanceof List<?> list) {
+					return evalListAsProgram(list);
+				}
+				return value;
 			}
 		}
 
