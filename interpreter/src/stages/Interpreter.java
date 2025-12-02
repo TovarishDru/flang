@@ -198,63 +198,6 @@ public class Interpreter {
 		);
 	}
 
-	public Object visitFunctionCallNode(FunctionCallNode functionCallNode) {
-		String funcName = functionCallNode.getFunctionName();
-
-		AstNode funcNode = symbolTable.find(funcName);
-		if (funcNode == null) {
-			throw new RuntimeException("ERROR: UNDEFINED FUNCTION " + funcName);
-		}
-
-		ArrayList<String> paramNames;
-		AstNode body;
-
-		if (funcNode instanceof FunctionNode fn) {
-			paramNames = fn.getParameters();
-			body = fn.getBody();
-		} else if (funcNode instanceof LambdaNode ln) {
-			paramNames = ln.getParameters();
-			body = ln.getBody();
-		} else {
-			throw new RuntimeException("ERROR: " + funcName + " is not a function or lambda");
-		}
-
-		ArrayList<AstNode> argExprs = functionCallNode.getParameters();
-
-		if (argExprs.size() < paramNames.size()) {
-			throw new RuntimeException("ERROR: TOO FEW ARGUMENTS FOR " + funcName);
-		}
-		if (argExprs.size() > paramNames.size()) {
-			throw new RuntimeException("ERROR: TOO MANY ARGUMENTS FOR " + funcName);
-		}
-
-		SymbolTable functionTable = new SymbolTable(symbolTable);
-
-		for (int i = 0; i < paramNames.size(); i++) {
-			String paramName = paramNames.get(i);
-			AstNode argAst = argExprs.get(i);
-
-			Object argVal = visit(argAst);
-
-			AstNode stored;
-			if (argVal instanceof AstNode ast) {
-				stored = ast;
-			} else {
-				stored = new RuntimeLiteralNode(argVal);
-			}
-
-			functionTable.define(paramName, stored);
-		}
-
-		Interpreter funcInterpreter = new Interpreter(functionTable, false);
-		Object result = funcInterpreter.visit(body);
-
-		if (result instanceof ReturnNode rn) {
-			return funcInterpreter.visit(rn.getValue());
-		}
-
-		return result;
-	}
 
 	public Object visitListNode(ListNode listNode) {
 		List<Object> values = new ArrayList<>();
