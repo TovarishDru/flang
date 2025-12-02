@@ -23,18 +23,27 @@ public class Interpreter {
 		Object result = null;
 
 		for (AstNode childNode : progNode.getChildren()) {
+
+			if (childNode instanceof ReturnNode returnNode) {
+				result = visit(returnNode.getValue());
+
+				if (globalScope && shouldPrintResult(childNode)) {
+					System.err.println(result);
+				}
+
+				return result;
+			}
+
 			if (childNode instanceof ProgNode) {
-				Interpreter localInterpreter = new Interpreter(symbolTable, false);
-				result = localInterpreter.visitProgNode((ProgNode) childNode);
+				Interpreter local = new Interpreter(symbolTable, false);
+				result = local.visitProgNode((ProgNode) childNode);
 			} else {
 				result = visit(childNode);
 			}
 
 			if (globalScope && shouldPrintResult(childNode)) {
 				NodeType t = childNode.getType();
-				if (result != null ||
-						t == NodeType.ATOM ||
-						t == NodeType.QUOTE) {
+				if (result != null || t == NodeType.ATOM || t == NodeType.QUOTE) {
 					System.err.println(result);
 				}
 			}
@@ -46,7 +55,7 @@ public class Interpreter {
 	private boolean shouldPrintResult(AstNode node) {
 		NodeType t = node.getType();
 		return switch (t) {
-			case SETQ, FUNC, WHILE, BREAK, RETURN, PROG -> false;
+			case SETQ, FUNC, WHILE, BREAK, RETURN -> false;
 			default -> true;
 		};
 	}
