@@ -483,10 +483,19 @@ public class Parser {
 
 	private AstNode parseEval() throws Exception {
 		advance();
-		AstNode expr = parseNode();
+
+		AstNode expr;
+
+		if (check(TokenType.QUOTE)) {
+			expr = parseQuoteWithoutBrackets();
+		} else {
+			expr = parseNode();
+		}
+
 		consume(TokenType.RPAREN);
 		return new EvalNode(expr);
 	}
+
 
 	private AstNode parseLogicalOperator() throws Exception {
 		Token op = advance();

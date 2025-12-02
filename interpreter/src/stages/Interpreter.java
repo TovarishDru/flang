@@ -90,87 +90,7 @@ public class Interpreter {
 	public Object visitPredicateNode(PredicateNode predicateNode) {
 		String predicate = predicateNode.getPredicate();
 		Object value = visit(predicateNode.getArgument());
-
-		return switch (predicate) {
-			case "isint" -> value instanceof Integer;
-			case "isreal" -> value instanceof Double || value instanceof Integer;
-			case "isbool" -> value instanceof Boolean;
-			case "isnull" -> value == null;
-			case "islist" -> value instanceof java.util.List<?>;
-			case "isatom" -> !(value instanceof java.util.List<?>);
-			default -> value != null;
-		};
-	}
-
-
-	private Number evalOperation(String operator, List<Object> operands) {
-		List<Double> numericOperands = operands.stream()
-				.map(o -> ((Number) o).doubleValue())
-				.toList();
-
-		switch (operator) {
-			case "plus" -> {
-				double result = numericOperands.stream().mapToDouble(Double::doubleValue).sum();
-
-				if (isInteger(result)) {
-					return (int) result;
-				} else {
-					return result;
-				}
-			}
-			case "minus" -> {
-				double result = numericOperands.get(0);
-				for (int i = 1; i < numericOperands.size(); i++) {
-					result -= numericOperands.get(i);
-				}
-				if (isInteger(result)) {
-					return (int) result;
-				} else return result;
-			}
-			case "times" -> {
-				double result = 1.0;
-				for (Double operand : numericOperands) {
-					result *= operand;
-				}
-				if (isInteger(result)) {
-					return (int) result;
-				} else return result;
-			}
-			case "divide" -> {
-				double result = numericOperands.get(0);
-				for (int i = 1; i < numericOperands.size(); i++) {
-					double divisor = numericOperands.get(i);
-					if (divisor == 0) {
-						throw new RuntimeException("ERROR: DIVISION BY ZERO");
-					}
-					result /= divisor;
-				}
-				if (isInteger(result)) {
-					return (int) result;
-				} else return result;
-			}
-			default -> throw new RuntimeException("ERROR: UNKNOWN OPERATOR " + operator);
-		}
-	}
-
-	private boolean isInteger(double value) {
-		return value == Math.floor(value);
-	}
-
-	private Object evalCondBranch(AstNode branch) {
-		if (branch == null) return null;
-
-		if (branch instanceof AtomNode atom) {
-			String name = atom.getValue();
-			if (name.equals("plus") ||
-					name.equals("minus") ||
-					name.equals("times") ||
-					name.equals("divide")) {
-				return name;
-			}
-		}
-
-		return visit(branch);
+		return evalPredicate(predicate, value);
 	}
 
 	public Object visitCondNode(CondNode condNode) {
@@ -181,11 +101,11 @@ public class Interpreter {
 		AstNode elseBranch;
 
 		if (kids != null && !kids.isEmpty()) {
-			condition  = kids.get(0);
+			condition = kids.get(0);
 			thenBranch = kids.size() >= 2 ? kids.get(1) : null;
 			elseBranch = kids.size() >= 3 ? kids.get(2) : null;
 		} else {
-			condition  = condNode.getCondition();
+			condition = condNode.getCondition();
 			thenBranch = condNode.getAction();
 			elseBranch = condNode.getDefaultAction();
 		}
@@ -222,45 +142,23 @@ public class Interpreter {
 
 	public Object visitNotNode(NotNode notNode) {
 		Object value = visit(notNode.getArgument());
-		if (value instanceof Boolean) {
-			return !(boolean) value;
-		}
-		throw new RuntimeException("ERROR: EXPECTED BOOLEAN FOR NOT");
+		return evalNot(value);
 	}
 
 	public Object visitComparisonNode(ComparisonNode comparisonNode) {
-		double left = ((Number) visit(comparisonNode.getLeftElement())).doubleValue();
-		double right = ((Number) visit(comparisonNode.getRightElement())).doubleValue();
-
-		return switch (comparisonNode.getComparison()) {
-			case "equal" -> left == right;
-			case "nonequal" -> left != right;
-			case "less" -> left < right;
-			case "lesseq" -> left <= right;
-			case "greater" -> left > right;
-			case "greatereq" -> left >= right;
-			default -> throw new RuntimeException("ERROR: UNKNOWN COMPARISON OPERATOR");
-		};
+		Object leftVal = visit(comparisonNode.getLeftElement());
+		Object rightVal = visit(comparisonNode.getRightElement());
+		String op = comparisonNode.getComparison();
+		return evalComparison(op, leftVal, rightVal);
 	}
 
 	public Object visitLogicalNode(LogicalNode logicalNode) {
 		Object leftVal = visit(logicalNode.getChildren().get(0));
 		Object rightVal = visit(logicalNode.getChildren().get(1));
 		String operator = logicalNode.getOperator();
-
-		boolean l = asBoolean(leftVal, "LEFT");
-		boolean r = asBoolean(rightVal, "RIGHT");
-
-		return switch (operator) {
-			case "and" -> l && r;
-			case "or" -> l || r;
-			case "xor" -> (l || r) && !(l && r);
-			case "nor" -> !(l || r);
-			case "nand" -> !(l && r);
-			case "xnor" -> !((l || r) && !(l && r));
-			default -> throw new RuntimeException("ERROR: UNKNOWN LOGICAL OPERATOR " + operator);
-		};
+		return evalLogical(operator, leftVal, rightVal);
 	}
+
 
 	private boolean asBoolean(Object value, String side) {
 		if (value instanceof Boolean b) {
@@ -274,21 +172,6 @@ public class Interpreter {
 		throw new RuntimeException(
 				"ERROR: LOGICAL " + side + " OPERAND IS NOT BOOLEAN: " + value
 		);
-	}
-
-	public Object visitConsNode(ConsNode consNode) {
-		Object head = visit(consNode.getItem());
-		Object tailVal = visit(consNode.getList());
-
-		List<Object> result = new ArrayList<>();
-		result.add(head);
-		if (tailVal instanceof List<?> tailList) {
-			result.addAll(tailList);
-		} else if (tailVal != null) {
-			throw new RuntimeException("ERROR: CONS TAIL IS NOT A LIST");
-		}
-
-		return result;
 	}
 
 	public Object visitFunctionCallNode(FunctionCallNode functionCallNode) {
@@ -370,14 +253,169 @@ public class Interpreter {
 	}
 
 	public Object visitEvalNode(EvalNode evalNode) {
-		Object evalResult = visit(evalNode.getExpr());
+		Object value = visit(evalNode.getExpr());
+		return evalValue(value);
+	}
 
-		if (evalResult instanceof AstNode ast) {
+	private Object evalValue(Object value) {
+		if (value instanceof AstNode ast) {
 			return visit(ast);
 		}
 
-		return evalResult;
+		if (value instanceof List<?> list) {
+			return evalListAsProgram(list);
+		}
+		return value;
 	}
+
+	private Object lookupAtomValue(String name) {
+		AstNode bound = symbolTable.find(name);
+		if (bound == null) {
+			throw new RuntimeException("ERROR: UNDEFINED VARIABLE " + name);
+		}
+		return visit(bound);
+	}
+
+
+	private Object evalListAsProgram(List<?> list) {
+		if (list.isEmpty()) {
+			return null;
+		}
+
+		Object head = list.get(0);
+
+		String funcName;
+
+		if (head instanceof String s) {
+			funcName = s;
+		} else if (head instanceof AstNode ast) {
+			Object fnValue = visit(ast);
+			if (fnValue instanceof String s2) {
+				funcName = s2;
+			} else {
+				throw new RuntimeException("Cannot eval list: invalid head " + fnValue);
+			}
+		} else {
+			throw new RuntimeException("Cannot eval list: invalid head " + head);
+		}
+
+		List<Object> args = new ArrayList<>();
+
+		for (int i = 1; i < list.size(); i++) {
+			Object arg = list.get(i);
+
+			if (arg instanceof List<?> subList) {
+				if (!subList.isEmpty() && subList.get(0) instanceof String) {
+					arg = evalListAsProgram(subList);
+				} else {
+				}
+			} else if (arg instanceof AstNode astArg) {
+				arg = visit(astArg);
+			} else if (arg instanceof String atomName) {
+				arg = lookupAtomValue(atomName);
+			}
+			args.add(arg);
+		}
+
+		return applyFunctionOrSpecialForm(funcName, args);
+	}
+
+	private void checkArity(String funcName, List<Object> args, int expected) {
+		if (args.size() != expected) {
+			throw new RuntimeException(
+					"ERROR: " + funcName + " EXPECTS " + expected + " ARGUMENT(S)"
+			);
+		}
+	}
+
+	private Object applyFunctionOrSpecialForm(String funcName, List<Object> args) {
+		switch (funcName) {
+			case "plus", "minus", "times", "divide" -> {
+				return evalOperation(funcName, args);
+			}
+
+			case "head" -> {
+				checkArity(funcName, args, 1);
+				return evalHead(args.get(0));
+			}
+			case "tail" -> {
+				checkArity(funcName, args, 1);
+				return evalTail(args.get(0));
+			}
+			case "cons" -> {
+				checkArity(funcName, args, 2);
+				return evalCons(args.get(0), args.get(1));
+			}
+
+			case "equal", "nonequal", "less", "lesseq", "greater", "greatereq" -> {
+				checkArity(funcName, args, 2);
+				return evalComparison(funcName, args.get(0), args.get(1));
+			}
+
+			case "isint", "isreal", "isbool", "isnull", "isatom", "islist" -> {
+				checkArity(funcName, args, 1);
+				return evalPredicate(funcName, args.get(0));
+			}
+
+			case "and", "or", "xor", "nor", "nand", "xnor" -> {
+				checkArity(funcName, args, 2);
+				return evalLogical(funcName, args.get(0), args.get(1));
+			}
+			case "not" -> {
+				checkArity(funcName, args, 1);
+				return evalNot(args.get(0));
+			}
+
+			case "eval" -> {
+				checkArity(funcName, args, 1);
+				return evalValue(args.get(0));
+			}
+		}
+
+		AstNode funcNode = symbolTable.find(funcName);
+		if (funcNode == null) {
+			throw new RuntimeException("ERROR: UNDEFINED FUNCTION " + funcName);
+		}
+
+		ArrayList<String> paramNames;
+		AstNode body;
+
+		if (funcNode instanceof FunctionNode fn) {
+			paramNames = fn.getParameters();
+			body = fn.getBody();
+		} else if (funcNode instanceof LambdaNode ln) {
+			paramNames = ln.getParameters();
+			body = ln.getBody();
+		} else {
+			throw new RuntimeException("ERROR: " + funcName + " is not a function or lambda");
+		}
+
+		if (args.size() < paramNames.size()) {
+			throw new RuntimeException("ERROR: TOO FEW ARGUMENTS FOR " + funcName);
+		}
+		if (args.size() > paramNames.size()) {
+			throw new RuntimeException("ERROR: TOO MANY ARGUMENTS FOR " + funcName);
+		}
+
+		SymbolTable functionTable = new SymbolTable(symbolTable);
+
+		for (int i = 0; i < paramNames.size(); i++) {
+			String paramName = paramNames.get(i);
+			Object argVal = args.get(i);
+
+			AstNode argNode;
+			if (argVal instanceof AstNode ast) {
+				argNode = ast;
+			} else {
+				argNode = new RuntimeLiteralNode(argVal);
+			}
+			functionTable.define(paramName, argNode);
+		}
+
+		Interpreter funcInterpreter = new Interpreter(functionTable, false);
+		return funcInterpreter.visit(body);
+	}
+
 
 	public Object visitReturnNode(ReturnNode returnNode) {
 		return visit(returnNode.getValue());
@@ -389,25 +427,20 @@ public class Interpreter {
 
 	public Object visitHeadNode(HeadNode headNode) {
 		Object value = visit(headNode.getListExpr());
-		if (!(value instanceof java.util.List<?> list)) {
-			throw new RuntimeException("ERROR: HEAD EXPECTED LIST");
-		}
-		if (list.isEmpty()) {
-			throw new RuntimeException("ERROR: EMPTY LIST");
-		}
-		return list.get(0);
+		return evalHead(value);
 	}
 
 	public Object visitTailNode(TailNode tailNode) {
 		Object value = visit(tailNode.getListExpr());
-		if (!(value instanceof java.util.List<?> list)) {
-			throw new RuntimeException("ERROR: TAIL EXPECTED LIST");
-		}
-		if (list.isEmpty()) {
-			throw new RuntimeException("ERROR: EMPTY LIST");
-		}
-		return list.subList(1, list.size());
+		return evalTail(value);
 	}
+
+	public Object visitConsNode(ConsNode consNode) {
+		Object head = visit(consNode.getItem());
+		Object tailVal = visit(consNode.getList());
+		return evalCons(head, tailVal);
+	}
+
 
 	public Object visitSetqNode(SetqNode setqNode) {
 		String name = setqNode.getName();
@@ -500,4 +533,164 @@ public class Interpreter {
 		return funcInterpreter.visit(body);
 	}
 
+
+	private Object evalPredicate(String predicate, Object value) {
+		return switch (predicate) {
+			case "isint" -> value instanceof Integer;
+			case "isreal" -> value instanceof Double || value instanceof Integer;
+			case "isbool" -> value instanceof Boolean;
+			case "isnull" -> value == null;
+			case "islist" -> value instanceof java.util.List<?>;
+			case "isatom" -> !(value instanceof java.util.List<?>);
+			default -> value != null;
+		};
+	}
+
+	private Object evalComparison(String op, Object leftVal, Object rightVal) {
+		if (leftVal instanceof Boolean && rightVal instanceof Boolean) {
+			boolean l = (Boolean) leftVal;
+			boolean r = (Boolean) rightVal;
+			return switch (op) {
+				case "equal" -> l == r;
+				case "nonequal" -> l != r;
+				default -> throw new RuntimeException(
+						"ERROR: BOOLEAN COMPARISON ONLY SUPPORTS equal/nonequal, got " + op
+				);
+			};
+		}
+
+		double l = ((Number) leftVal).doubleValue();
+		double r = ((Number) rightVal).doubleValue();
+
+		return switch (op) {
+			case "equal" -> l == r;
+			case "nonequal" -> l != r;
+			case "less" -> l < r;
+			case "lesseq" -> l <= r;
+			case "greater" -> l > r;
+			case "greatereq" -> l >= r;
+			default -> throw new RuntimeException("ERROR: UNKNOWN COMPARISON OPERATOR " + op);
+		};
+	}
+
+	private Object evalLogical(String operator, Object leftVal, Object rightVal) {
+		boolean l = asBoolean(leftVal, "LEFT");
+		boolean r = asBoolean(rightVal, "RIGHT");
+
+		return switch (operator) {
+			case "and" -> l && r;
+			case "or" -> l || r;
+			case "xor" -> (l || r) && !(l && r);
+			case "nor" -> !(l || r);
+			case "nand" -> !(l && r);
+			case "xnor" -> !((l || r) && !(l && r));
+			default -> throw new RuntimeException("ERROR: UNKNOWN LOGICAL OPERATOR " + operator);
+		};
+	}
+
+	private Object evalNot(Object value) {
+		boolean v = asBoolean(value, "ARG");
+		return !v;
+	}
+
+	private Object evalHead(Object value) {
+		if (!(value instanceof java.util.List<?> list)) {
+			throw new RuntimeException("ERROR: HEAD EXPECTED LIST");
+		}
+		if (list.isEmpty()) {
+			throw new RuntimeException("ERROR: EMPTY LIST");
+		}
+		return list.get(0);
+	}
+
+	private Object evalTail(Object value) {
+		if (!(value instanceof java.util.List<?> list)) {
+			throw new RuntimeException("ERROR: TAIL EXPECTED LIST");
+		}
+		if (list.isEmpty()) {
+			throw new RuntimeException("ERROR: EMPTY LIST");
+		}
+		return new ArrayList<>(list.subList(1, list.size()));
+	}
+
+	private Object evalCons(Object head, Object tailVal) {
+		java.util.List<Object> result = new ArrayList<>();
+		result.add(head);
+		if (tailVal instanceof java.util.List<?> tailList) {
+			result.addAll(tailList);
+		} else if (tailVal != null) {
+			throw new RuntimeException("ERROR: CONS TAIL IS NOT A LIST");
+		}
+		return result;
+	}
+
+	private Number evalOperation(String operator, List<Object> operands) {
+		List<Double> numericOperands = operands.stream()
+				.map(o -> ((Number) o).doubleValue())
+				.toList();
+
+		switch (operator) {
+			case "plus" -> {
+				double result = numericOperands.stream().mapToDouble(Double::doubleValue).sum();
+
+				if (isInteger(result)) {
+					return (int) result;
+				} else {
+					return result;
+				}
+			}
+			case "minus" -> {
+				double result = numericOperands.get(0);
+				for (int i = 1; i < numericOperands.size(); i++) {
+					result -= numericOperands.get(i);
+				}
+				if (isInteger(result)) {
+					return (int) result;
+				} else return result;
+			}
+			case "times" -> {
+				double result = 1.0;
+				for (Double operand : numericOperands) {
+					result *= operand;
+				}
+				if (isInteger(result)) {
+					return (int) result;
+				} else return result;
+			}
+			case "divide" -> {
+				double result = numericOperands.get(0);
+				for (int i = 1; i < numericOperands.size(); i++) {
+					double divisor = numericOperands.get(i);
+					if (divisor == 0) {
+						throw new RuntimeException("ERROR: DIVISION BY ZERO");
+					}
+					result /= divisor;
+				}
+				if (isInteger(result)) {
+					return (int) result;
+				} else return result;
+			}
+			default -> throw new RuntimeException("ERROR: UNKNOWN OPERATOR " + operator);
+		}
+	}
+
+	private boolean isInteger(double value) {
+		return value == Math.floor(value);
+	}
+
+	private Object evalCondBranch(AstNode branch) {
+		if (branch == null) return null;
+
+		if (branch instanceof AtomNode atom) {
+			String name = atom.getValue();
+			if (name.equals("plus") ||
+					name.equals("minus") ||
+					name.equals("times") ||
+					name.equals("divide")) {
+				return name;
+			}
+		}
+
+		return visit(branch);
+	}
 }
