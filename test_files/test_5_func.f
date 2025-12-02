@@ -9,3 +9,8 @@
 (func makeList (A) '(A))
 
 (makeList '1)
+
+(setq x 10)
+(func test (x) (plus x 5))
+(test x)
+x
