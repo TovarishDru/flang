@@ -19,9 +19,7 @@
 (setq t '(2 3))
 (setq expr (cons 'plus t))
 (eval expr)
-(setq expr (cons 'plus (tail '(1 2 3)
-
-
+(setq expr (cons 'plus (tail '(1 2 3))))
 
 (eval '(plus 2 (times 3 4)))
 
