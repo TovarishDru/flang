@@ -237,10 +237,7 @@ public class Interpreter {
 
 	public Object visitEvalNode(EvalNode evalNode) {
 		Object value = visit(evalNode.getExpr());
-		return evalValue(value);
-	}
 
-	private Object evalValue(Object value) {
 		if (value instanceof AstNode ast) {
 			return visit(ast);
 		}
@@ -266,7 +263,6 @@ public class Interpreter {
 		}
 
 		Object head = list.get(0);
-
 		String funcName;
 
 		if (head instanceof String s) {
