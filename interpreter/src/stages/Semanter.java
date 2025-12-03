@@ -293,7 +293,7 @@ public class Semanter {
         List<AstNode> kids = node.getChildren();
         if (kids != null) {
             for (int i = 0; i < kids.size(); i++) {
-                kids.set(i, constantFold(kids.get(i))); // сначала оптимизируем детей
+                kids.set(i, constantFold(kids.get(i)));
             }
         }
 
