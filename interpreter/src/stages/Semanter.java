@@ -325,7 +325,7 @@ public class Semanter {
         }
 
         // logical
-        else if (kind == NodeType.LOGICALOP && kids != null && kids.size() == 2) {
+        else if (kind == NodeType.LOGICALOP && kids != null && kids.size() >= 2) {
             TokenType op = readOperatorType(node);
             if (op == null) op = mapWordToType(readOperatorWord(node));
             Boolean LB = asBoolLiteral(kids.get(0));
