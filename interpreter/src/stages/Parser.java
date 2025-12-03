@@ -119,7 +119,12 @@ public class Parser {
 
 			case ATOM,
 				 PLUS, MINUS, TIMES, DIVIDE,
-				 LESS, LESSEQ, GREATER, GREATEREQ, EQUAL, NONEQUAL, ISBOOL -> {
+				 ISINT, ISREAL, ISBOOL, ISNULL, ISATOM, ISLIST,
+				 AND, OR, XOR, NOT,
+				 LESS, LESSEQ, GREATER, GREATEREQ, EQUAL, NONEQUAL,
+				 SETQ, FUNC, LAMBDA, PROG, COND, WHILE, RETURN, BREAK,
+				 HEAD, TAIL, CONS,
+				 EVAL -> {
 				return new AtomNode(t);
 			}
 
@@ -300,17 +305,14 @@ public class Parser {
 	}
 
 	private AstNode parseFUNC() throws Exception {
-		advance();
+		advance(); // "func"
 
 		SymbolTable prev = localScope;
 		localScope = new SymbolTable(prev);
 
 		String functionName = consume(TokenType.ATOM).getValue();
 
-		FunctionNode placeholder = new FunctionNode(functionName, new ArrayList<>(), null);
-		globalScope.define(functionName, placeholder);
-		localScope.define(functionName, placeholder);
-
+		// 1. СНАЧАЛА парсим список параметров
 		consume(TokenType.LPAREN);
 		ArrayList<String> params = new ArrayList<>();
 		while (!isAtEnd() && !check(TokenType.RPAREN)) {
@@ -322,6 +324,10 @@ public class Parser {
 			throw new Exception("SYNTAX ERROR: MISSING ')' IN PARAMETER LIST FOR FUNCTION " + functionName);
 		}
 		consume(TokenType.RPAREN);
+
+		FunctionNode placeholder = new FunctionNode(functionName, params, null);
+		globalScope.define(functionName, placeholder);
+		localScope.define(functionName, placeholder);
 
 		ArrayList<AstNode> bodyExprs = new ArrayList<>();
 		while (!isAtEnd() && !check(TokenType.RPAREN)) {
@@ -337,7 +343,6 @@ public class Parser {
 		localScope = prev;
 
 		FunctionNode fn = new FunctionNode(functionName, params, body);
-
 		globalScope.define(functionName, fn);
 		localScope.define(functionName, fn);
 
@@ -411,7 +416,14 @@ public class Parser {
 
 	private AstNode parseWHILE() throws Exception {
 		advance();
+		// while ( <condition> ) <body...>
+		consume(TokenType.LPAREN);
 		AstNode condition = parseNode();
+		if (isAtEnd()) {
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN WHILE CONDITION");
+		}
+		consume(TokenType.RPAREN);
+
 		ArrayList<AstNode> body = new ArrayList<>();
 		while (!isAtEnd() && !check(TokenType.RPAREN)) {
 			body.add(parseNode());
@@ -420,6 +432,7 @@ public class Parser {
 			throw new Exception("SYNTAX ERROR: MISSING ')' IN WHILE BODY");
 		}
 		consume(TokenType.RPAREN);
+
 		return new WhileNode(condition, body);
 	}
 
@@ -440,9 +453,6 @@ public class Parser {
 		Token op = advance(); // isint|isreal|isbool|isnull|isatom|islist
 		AstNode arg = parseNode();
 		consume(TokenType.RPAREN);
-		if (op == null) {
-			throw new Exception("SYNTAX ERROR: Expected predicate parameter"); //TODO Check on test case and delete maybe
-		}
 		return new PredicateNode(op.getValue(), arg);
 	}
 

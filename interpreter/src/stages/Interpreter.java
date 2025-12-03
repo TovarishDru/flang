@@ -122,10 +122,32 @@ public class Interpreter {
 		return evalOperation(operator, evaluatedOperands);
 	}
 
-	public Object visitPredicateNode(PredicateNode predicateNode) {
-		String predicate = predicateNode.getPredicate();
-		Object value = visit(predicateNode.getArgument());
+	public Object visitPredicateNode(PredicateNode node) {
+		String predicate = node.getPredicate();
+		AstNode argNode = node.getArgument();
+
+		if ("isatom".equals(predicate)) {
+			if (isAtomSyntax(argNode)) {
+				return true;
+			}
+
+			Object value = visit(argNode);
+			return value instanceof String;
+		}
+
+		Object value = visit(argNode);
 		return evalPredicate(predicate, value);
+	}
+
+	private boolean isAtomSyntax(AstNode node) {
+		if (node instanceof AtomNode) {
+			return true;
+		}
+		if (node instanceof QuoteNode q) {
+			AstNode inner = q.getQuotedExpr();
+			return inner instanceof AtomNode;
+		}
+		return false;
 	}
 
 	public Object visitCondNode(CondNode condNode) {
@@ -538,7 +560,6 @@ public class Interpreter {
 			case "isbool" -> value instanceof Boolean;
 			case "isnull" -> value == null;
 			case "islist" -> value instanceof java.util.List<?>;
-			case "isatom" -> value instanceof String;
 			default -> value != null;
 		};
 	}
