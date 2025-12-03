@@ -1,5 +1,7 @@
 (setq x 0)
-(while (less x 5) (setq x (plus x 1)))
+(while (less x 5) 
+    (setq x (plus x 1))
+)
 x
 
 (setq y 0)

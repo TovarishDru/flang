@@ -10,5 +10,12 @@ x
 )
 x
 
+(setq y 1)
+(while (less y 5)
+    (setq y (plus 1 y))
+    (setq x 12)
+)
+x
+
 (lambda () (setq x 500))
 x
