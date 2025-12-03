@@ -417,12 +417,7 @@ public class Parser {
 	private AstNode parseWHILE() throws Exception {
 		advance();
 		// while ( <condition> ) <body...>
-		consume(TokenType.LPAREN);
 		AstNode condition = parseNode();
-		if (isAtEnd()) {
-			throw new Exception("SYNTAX ERROR: MISSING ')' IN WHILE CONDITION");
-		}
-		consume(TokenType.RPAREN);
 
 		ArrayList<AstNode> body = new ArrayList<>();
 		while (!isAtEnd() && !check(TokenType.RPAREN)) {
