@@ -35,6 +35,7 @@ public class Main {
 
                 System.out.println("\nOptimization logs:");
                 Semanter semanter = new Semanter();
+                semanter.validate(ast);
                 ast = semanter.optimize(ast);
 
                 System.out.println("\nTree after optimization:");
