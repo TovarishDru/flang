@@ -44,7 +44,7 @@ public class Lexer {
                 } else if (Character.isLetter(cur)) {
                     tokens.add(parseKeyword());
                 } else {
-                    throw new Exception("Unknown character '" + cur + "' at line " + line);
+                    throw new Exception("LEXICAL ERROR: UNKNOWN CHARACTER '" + cur + "' at line " + line);
                 }
             }
         }
@@ -88,7 +88,7 @@ public class Lexer {
         }
 
         if (pos < length && Character.isLetter(input.charAt(pos))) {
-            throw new Exception("Unexpected character '" + input.charAt(pos) + "' at line " + line);
+            throw new Exception("LEXICAL ERROR: UNEXPECTED CHARACTER '" + input.charAt(pos) + "' at line " + line);
         }
 
         String numberString = builder.toString();
