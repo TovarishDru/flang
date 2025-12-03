@@ -4,6 +4,10 @@
 
 (xor true true)
 
+(xor 1 2)
+
+(xor 0 1)
+
 (cond (less 3 5) 1 0)
 
 (and (less 1 2) (greater 5 3))

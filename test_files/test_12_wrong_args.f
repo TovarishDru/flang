@@ -10,8 +10,6 @@
 
 (and '(sdfsdf sdfsdf) true)
 
-(xor 0 1)
-
 (or false 123)
 
 (head 5)
