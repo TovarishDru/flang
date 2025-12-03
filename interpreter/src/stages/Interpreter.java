@@ -66,11 +66,11 @@ public class Interpreter {
 		AstNode bound = symbolTable.find(name);
 
 		if (bound == null) {
-			throw new RuntimeException("ERROR: UNDEFINED VARIABLE " + name);
+			throw new RuntimeException("INTERPRETATION ERROR: UNDEFINED VARIABLE " + name);
 		}
 
 		if (bound == atomNode) {
-			throw new RuntimeException("ERROR: SELF-REFERENTIAL VARIABLE " + name);
+			throw new RuntimeException("INTERPRETATION ERROR: SELF-REFERENTIAL VARIABLE " + name);
 		}
 
 		if (bound instanceof RuntimeLiteralNode rl) {
@@ -202,13 +202,18 @@ public class Interpreter {
 		if (value instanceof Boolean b) {
 			return b;
 		}
+		if (value instanceof Number n) {
+			return n.doubleValue() != 0.0;
+		}
 		if (value instanceof String s) {
 			if (s.equals("true") || s.equals("false")) {
 				return Boolean.parseBoolean(s);
 			}
+			if (s.equals("0")) return false;
+			if (s.equals("1")) return true;
 		}
 		throw new RuntimeException(
-				"ERROR: LOGICAL " + side + " OPERAND IS NOT BOOLEAN: " + value
+				"INTERPRETATION ERROR: LOGICAL " + side + " OPERAND IS NOT BOOLEAN: " + value
 		);
 	}
 
@@ -268,7 +273,7 @@ public class Interpreter {
 	private Object lookupAtomValue(String name) {
 		AstNode bound = symbolTable.find(name);
 		if (bound == null) {
-			throw new RuntimeException("ERROR: UNDEFINED VARIABLE " + name);
+			throw new RuntimeException("INTERPRETATION ERROR: UNDEFINED VARIABLE " + name);
 		}
 		return visit(bound);
 	}
@@ -290,10 +295,10 @@ public class Interpreter {
 			if (fnValue instanceof String s2) {
 				funcName = s2;
 			} else {
-				throw new RuntimeException("Cannot eval list: invalid head " + fnValue);
+				throw new RuntimeException("INTERPRETATION ERROR: CANNOT EVAL LIST: INVALID HEAD " + fnValue);
 			}
 		} else {
-			throw new RuntimeException("Cannot eval list: invalid head " + head);
+			throw new RuntimeException("INTERPRETATION ERROR: CANNOT EVAL LIST: INVALID HEAD " + head);
 		}
 
 		List<Object> args = new ArrayList<>();
@@ -320,7 +325,7 @@ public class Interpreter {
 	private void checkArity(String funcName, List<Object> args, int expected) {
 		if (args.size() != expected) {
 			throw new RuntimeException(
-					"ERROR: " + funcName + " EXPECTS " + expected + " ARGUMENT(S)"
+					"INTERPRETATION ERROR: " + funcName + " EXPECTS " + expected + " ARGUMENT(S)"
 			);
 		}
 	}
@@ -384,14 +389,14 @@ public class Interpreter {
 			paramNames = ln.getParameters();
 			body = ln.getBody();
 		} else {
-			throw new RuntimeException("ERROR: " + funcName + " is not a function or lambda");
+			throw new RuntimeException("INTERPRETATION ERROR: " + funcName + " is not a function or lambda");
 		}
 
 		if (args.size() < paramNames.size()) {
-			throw new RuntimeException("ERROR: TOO FEW ARGUMENTS FOR " + funcName);
+			throw new RuntimeException("INTERPRETATION ERROR: TOO FEW ARGUMENTS FOR " + funcName);
 		}
 		if (args.size() > paramNames.size()) {
-			throw new RuntimeException("ERROR: TOO MANY ARGUMENTS FOR " + funcName);
+			throw new RuntimeException("INTERPRETATION ERROR: TOO MANY ARGUMENTS FOR " + funcName);
 		}
 
 		SymbolTable functionTable = new SymbolTable(symbolTable);
@@ -478,7 +483,8 @@ public class Interpreter {
 					}
 					return evalOperation(s, evaluatedOperands);
 				}
-				default -> throw new RuntimeException("ERROR: expression does not evaluate to a function");
+				default ->
+						throw new RuntimeException("INTERPRETATION ERROR: EXPRESSION DOES NOT EVALUATE TO A FUNCTION");
 			}
 		}
 
@@ -492,13 +498,13 @@ public class Interpreter {
 			paramNames = func.getParameters();
 			body = func.getBody();
 		} else {
-			throw new RuntimeException("ERROR: expression does not evaluate to a function");
+			throw new RuntimeException("INTERPRETATION ERROR: EXPRESSION DOES NOT EVALUATE TO A FUNCTION");
 		}
 
 		ArrayList<AstNode> argExprs = node.getArguments();
 		if (argExprs.size() != paramNames.size()) {
-			throw new RuntimeException("ERROR: function expected " +
-					paramNames.size() + " args, got " + argExprs.size());
+			throw new RuntimeException("INTERPRETATION ERROR: FUNCTION EXPECTED " +
+					paramNames.size() + " ARGS, got " + argExprs.size());
 		}
 
 		SymbolTable functionTable = new SymbolTable(symbolTable);
@@ -545,7 +551,7 @@ public class Interpreter {
 				case "equal" -> l == r;
 				case "nonequal" -> l != r;
 				default -> throw new RuntimeException(
-						"ERROR: BOOLEAN COMPARISON ONLY SUPPORTS equal/nonequal, got " + op
+						"INTERPRETATION ERROR: BOOLEAN COMPARISON ONLY SUPPORTS equal/nonequal, got " + op
 				);
 			};
 		}
@@ -560,7 +566,7 @@ public class Interpreter {
 			case "lesseq" -> l <= r;
 			case "greater" -> l > r;
 			case "greatereq" -> l >= r;
-			default -> throw new RuntimeException("ERROR: UNKNOWN COMPARISON OPERATOR " + op);
+			default -> throw new RuntimeException("INTERPRETATION ERROR: UNKNOWN COMPARISON OPERATOR " + op);
 		};
 	}
 
@@ -575,7 +581,7 @@ public class Interpreter {
 			case "nor" -> !(l || r);
 			case "nand" -> !(l && r);
 			case "xnor" -> !((l || r) && !(l && r));
-			default -> throw new RuntimeException("ERROR: UNKNOWN LOGICAL OPERATOR " + operator);
+			default -> throw new RuntimeException("INTERPRETATION ERROR: UNKNOWN LOGICAL OPERATOR " + operator);
 		};
 	}
 
@@ -586,20 +592,20 @@ public class Interpreter {
 
 	private Object evalHead(Object value) {
 		if (!(value instanceof java.util.List<?> list)) {
-			throw new RuntimeException("ERROR: HEAD EXPECTED LIST");
+			throw new RuntimeException("INTERPRETATION ERROR: HEAD EXPECTED LIST");
 		}
 		if (list.isEmpty()) {
-			throw new RuntimeException("ERROR: EMPTY LIST");
+			throw new RuntimeException("INTERPRETATION ERROR: EMPTY LIST");
 		}
 		return list.get(0);
 	}
 
 	private Object evalTail(Object value) {
 		if (!(value instanceof java.util.List<?> list)) {
-			throw new RuntimeException("ERROR: TAIL EXPECTED LIST");
+			throw new RuntimeException("INTERPRETATION ERROR: TAIL EXPECTED LIST");
 		}
 		if (list.isEmpty()) {
-			throw new RuntimeException("ERROR: EMPTY LIST");
+			throw new RuntimeException("INTERPRETATION ERROR: EMPTY LIST");
 		}
 		return new ArrayList<>(list.subList(1, list.size()));
 	}
@@ -610,7 +616,7 @@ public class Interpreter {
 		if (tailVal instanceof java.util.List<?> tailList) {
 			result.addAll(tailList);
 		} else if (tailVal != null) {
-			throw new RuntimeException("ERROR: CONS TAIL IS NOT A LIST");
+			throw new RuntimeException("INTERPRETATION ERROR: CONS TAIL IS NOT A LIST");
 		}
 		return result;
 	}
@@ -653,7 +659,7 @@ public class Interpreter {
 				for (int i = 1; i < numericOperands.size(); i++) {
 					double divisor = numericOperands.get(i);
 					if (divisor == 0) {
-						throw new RuntimeException("ERROR: DIVISION BY ZERO");
+						throw new RuntimeException("INTERPRETATION ERROR: DIVISION BY ZERO");
 					}
 					result /= divisor;
 				}
@@ -661,7 +667,7 @@ public class Interpreter {
 					return (int) result;
 				} else return result;
 			}
-			default -> throw new RuntimeException("ERROR: UNKNOWN OPERATOR " + operator);
+			default -> throw new RuntimeException("INTERPRETATION ERROR: UNKNOWN OPERATOR " + operator);
 		}
 	}
 

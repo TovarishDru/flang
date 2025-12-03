@@ -11,48 +11,282 @@ import java.util.Optional;
 
 public class Semanter {
 
-    public interface Typed {
-        Object getDataType();
-    }
-
-    public static class SemanticException extends Exception {
-        public SemanticException(String message) {
-            super(message);
-        }
-    }
-
-    private final NodeType arithmeticKind;
-    private final NodeType logicalKind;
-    private final NodeType comparisonKind;
-
-
-    public Semanter() {
-        this.arithmeticKind = NodeType.OPERATION;
-        this.logicalKind = NodeType.LOGICALOP;
-        this.comparisonKind = NodeType.COMP;
-    }
-
-    private static SemanticException error(String fmt, Object... args) {
-        return new SemanticException(String.format(fmt, args));
-    }
-
-    private static String pathString(Deque<Integer> path) {
-        if (path.isEmpty()) return "/";
-        StringBuilder sb = new StringBuilder();
-        for (Integer i : path) sb.append('/').append(i);
-        return sb.toString();
+    public void validate(AstNode root) throws Exception {
+        if (root == null) return;
+        checkNode(root, new ArrayDeque<>());
     }
 
     public AstNode optimize(AstNode root) {
         if (root == null) return null;
-        return performOptimizations(root);
-    }
-
-    private AstNode performOptimizations(AstNode root) {
         root = constantFold(root);
         root = simplifyConditionals(root);
         return root;
     }
+
+    private String pathString(Deque<Integer> path) {
+        if (path.isEmpty()) return "/";
+        StringBuilder sb = new StringBuilder();
+        for (Integer i : path) {
+            sb.append('/').append(i);
+        }
+        return sb.toString();
+    }
+
+    private void checkNode(AstNode node, Deque<Integer> path) throws Exception {
+        if (node == null) return;
+
+        NodeType kind = node.getType();
+
+        switch (kind) {
+            case OPERATION -> {
+                checkOperationNode((OperationNode) node, path);
+            }
+            case LOGICALOP -> {
+                checkLogicalNode((LogicalNode) node, path);
+            }
+            case COMP -> {
+                checkComparisonNode((ComparisonNode) node, path);
+            }
+            case HEAD -> {
+                checkHeadNode((HeadNode) node, path);
+            }
+            case TAIL -> {
+                checkTailNode((TailNode) node, path);
+            }
+            case CONS -> {
+                checkConsNode((ConsNode) node, path);
+            }
+            case WHILE -> {
+                checkWhileNode((WhileNode) node, path);
+            }
+            case COND -> {
+                checkCondNode((CondNode) node, path);
+            }
+            default -> {
+                List<AstNode> kids = node.getChildren();
+                if (kids != null) {
+                    for (int i = 0; i < kids.size(); i++) {
+                        path.addLast(i);
+                        checkNode(kids.get(i), path);
+                        path.removeLast();
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkOperationNode(OperationNode node, Deque<Integer> path) throws Exception {
+        List<AstNode> kids = node.getChildren();
+        if (kids == null || kids.size() != 2) {
+            return;
+        }
+
+        for (int i = 0; i < kids.size(); i++) {
+            path.addLast(i);
+            AstNode child = kids.get(i);
+
+            checkNode(child, path);
+
+            if (isList(child)) {
+                throw new Exception(
+                        "SEMANTIC ERROR: ARITHMETIC OPERATOR '" + node.getOperator() +
+                                "' CANNOT TAKE LIST ARGUMENT at " + pathString(path)
+                );
+            }
+
+            if (child.getType() == NodeType.LITERAL && isNumericLiteral(child)) {
+                throw new Exception(
+                        "SEMANTIC ERROR: arithmetic operator '" + node.getOperator() +
+                                "' expects numeric arguments, got literal of type " +
+                                ((LiteralNode) child).getTokenType() +
+                                " at " + pathString(path)
+                );
+            }
+
+            path.removeLast();
+        }
+    }
+
+    private void checkLogicalNode(LogicalNode node, Deque<Integer> path) throws Exception {
+        List<AstNode> kids = node.getChildren();
+        if (kids == null || kids.size() != 2) {
+            return;
+        }
+
+        for (int i = 0; i < kids.size(); i++) {
+            path.addLast(i);
+            AstNode child = kids.get(i);
+
+            checkNode(child, path);
+
+            if (isList(child)) {
+                throw new Exception(
+                        "SEMANTIC ERROR: LOGICAL OPERATOR '" + node.getOperator() +
+                                "' CANNOT TAKE LIST ARGUMENT at " + pathString(path)
+                );
+            }
+
+            if (child.getType() == NodeType.LITERAL) {
+                if (isBoolLiteral(child) && isNumericLiteral(child)) {
+                    throw new Exception(
+                            "SEMANTIC ERROR: LOGICAL OPERATOR '" + node.getOperator() +
+                                    "' EXPECTS BOOLEAN OR NUMERIC ARGUMENT, got LITERAL of type " +
+                                    ((LiteralNode) child).getTokenType() +
+                                    " at " + pathString(path)
+                    );
+                }
+            }
+
+            path.removeLast();
+        }
+    }
+
+    private void checkComparisonNode(ComparisonNode node, Deque<Integer> path) throws Exception {
+        List<AstNode> kids = node.getChildren();
+        if (kids == null || kids.size() != 2) {
+            return;
+        }
+
+        for (int i = 0; i < kids.size(); i++) {
+            path.addLast(i);
+            AstNode child = kids.get(i);
+
+            checkNode(child, path);
+
+            if (isList(child)) {
+                throw new Exception(
+                        "SEMANTIC ERROR: COMPARISON '" + node.getComparison() +
+                                "' CANNOT BE APPLIED TO LIST at " + pathString(path)
+                );
+            }
+
+            path.removeLast();
+        }
+    }
+
+    private void checkHeadNode(HeadNode node, Deque<Integer> path) throws Exception {
+        AstNode arg = node.getListExpr();
+        path.addLast(0);
+
+        checkNode(arg, path);
+        if (arg.getType() == NodeType.LITERAL && !isList(arg)) {
+            throw new Exception(
+                    "SEMANTIC ERROR: HEAD ARGUMENT MUST BE A LIST, got LITERAL of type " +
+                            ((LiteralNode) arg).getTokenType() +
+                            " at " + pathString(path)
+            );
+        }
+        path.removeLast();
+    }
+
+    private void checkTailNode(TailNode node, Deque<Integer> path) throws Exception {
+        AstNode arg = node.getListExpr();
+        path.addLast(0);
+
+        checkNode(arg, path);
+
+        if (arg.getType() == NodeType.LITERAL && !isList(arg)) {
+            throw new Exception(
+                    "SEMANTIC ERROR: TAIL ARGUMENT MUST BE A LIST, got LITERAL of type " +
+                            ((LiteralNode) arg).getTokenType() +
+                            " at " + pathString(path)
+            );
+        }
+
+        path.removeLast();
+    }
+
+    private void checkConsNode(ConsNode node, Deque<Integer> path) throws Exception {
+        List<AstNode> kids = node.getChildren();
+        if (kids == null || kids.size() != 2) return;
+
+        path.addLast(0);
+        checkNode(kids.get(0), path);
+        path.removeLast();
+
+        AstNode tail = kids.get(1);
+        path.addLast(1);
+
+        checkNode(tail, path);
+
+        if (tail.getType() == NodeType.LITERAL && !isList(tail)) {
+            throw new Exception(
+                    "SEMANTIC ERROR: CONS SECOND ARGUMENT MUST BE A LIST, got LITERAL of type " +
+                            ((LiteralNode) tail).getTokenType() +
+                            " at " + pathString(path)
+            );
+        }
+        path.removeLast();
+    }
+
+    private void checkWhileNode(WhileNode node, Deque<Integer> path) throws Exception {
+        AstNode cond = node.getCondition();
+        List<AstNode> body = node.getBody();
+
+        path.addLast(0);
+        checkNode(cond, path);
+
+        if (isList(cond)) {
+            throw new Exception(
+                    "SEMANTIC ERROR: WHILE CONDITION MUST BE BOOLEAN, got LIST at " +
+                            pathString(path)
+            );
+        }
+
+        if (cond.getType() == NodeType.LITERAL &&
+                isBoolLiteral(cond)) {
+            throw new Exception(
+                    "SEMANTIC ERROR: WHILE CONDITION MUST BE BOOLEAN, got LITERAL of type " +
+                            ((LiteralNode) cond).getTokenType() +
+                            " at " + pathString(path)
+            );
+        }
+
+        path.removeLast();
+
+        if (body != null) {
+            for (int i = 0; i < body.size(); i++) {
+                path.addLast(i + 1);
+                checkNode(body.get(i), path);
+                path.removeLast();
+            }
+        }
+    }
+
+    private void checkCondNode(CondNode node, Deque<Integer> path) throws Exception {
+        List<AstNode> kids = node.getChildren();
+        if (kids == null || kids.isEmpty()) return;
+
+        AstNode cond = kids.get(0);
+        path.addLast(0);
+
+        checkNode(cond, path);
+
+        if (isList(cond)) {
+            throw new Exception(
+                    "SEMANTIC ERROR: COND CONDITION MUST BE BOOLEAN, got LIST at " +
+                            pathString(path)
+            );
+        }
+
+        if (cond.getType() == NodeType.LITERAL &&
+                isBoolLiteral(cond)) {
+            throw new Exception(
+                    "SEMANTIC ERROR: cond condition must be boolean, got literal of type " +
+                            ((LiteralNode) cond).getTokenType() +
+                            " at " + pathString(path)
+            );
+        }
+
+        path.removeLast();
+
+        for (int i = 1; i < kids.size(); i++) {
+            path.addLast(i);
+            checkNode(kids.get(i), path);
+            path.removeLast();
+        }
+    }
+
 
     private AstNode constantFold(AstNode node) {
         if (node == null) return null;
@@ -169,6 +403,30 @@ public class Semanter {
         return node;
     }
 
+    private boolean isList(AstNode n) {
+        if (n == null) return false;
+        NodeType k = n.getType();
+
+        if (k == NodeType.LIST) return true;
+
+        if (k == NodeType.QUOTE) {
+            AstNode inner = ((QuoteNode) n).getQuotedExpr();
+            return inner != null && inner.getType() == NodeType.LIST;
+        }
+        return false;
+    }
+
+    private boolean isNumericLiteral(AstNode n) {
+        if (n == null || n.getType() != NodeType.LITERAL) return true;
+        TokenType tt = ((LiteralNode) n).getTokenType();
+        return tt != TokenType.INTEGER && tt != TokenType.REAL;
+    }
+
+    private boolean isBoolLiteral(AstNode n) {
+        if (n == null || n.getType() != NodeType.LITERAL) return true;
+        return ((LiteralNode) n).getTokenType() != TokenType.BOOLEAN;
+    }
+
     private Number asNumberLiteral(AstNode n) {
         if (n == null || n.getType() != NodeType.LITERAL) return null;
         LiteralNode lit = (LiteralNode) n;
@@ -184,9 +442,22 @@ public class Semanter {
     private Boolean asBoolLiteral(AstNode n) {
         if (n == null || n.getType() != NodeType.LITERAL) return null;
         LiteralNode lit = (LiteralNode) n;
-        if (lit.getTokenType() == TokenType.BOOLEAN) {
-            return "true".equalsIgnoreCase(lit.getValue());
+        TokenType tt = lit.getTokenType();
+        String v = lit.getValue();
+
+        if (tt == TokenType.BOOLEAN) {
+            return "true".equalsIgnoreCase(v);
         }
+
+        if (tt == TokenType.INTEGER || tt == TokenType.REAL) {
+            try {
+                double d = Double.parseDouble(v);
+                return d != 0.0;
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+
         return null;
     }
 

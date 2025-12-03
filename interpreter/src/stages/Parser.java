@@ -37,7 +37,7 @@ public class Parser {
 
 	private Token peek() throws Exception {
 		if (isAtEnd()) {
-			throw new Exception("ERROR: UNEXPECTED END OF INPUT");
+			throw new Exception("SYNTAX ERROR: UNEXPECTED END OF INPUT");
 		}
 		return tokens.get(tokenIndex);
 	}
@@ -60,11 +60,11 @@ public class Parser {
 
 	private Token consume(TokenType expected) throws Exception {
 		if (isAtEnd()) {
-			throw new Exception("ERROR: UNEXPECTED END OF INPUT, EXPECTED " + expected);
+			throw new Exception("SYNTAX ERROR: UNEXPECTED END OF INPUT, EXPECTED " + expected);
 		}
 		Token token = tokens.get(tokenIndex);
 		if (token.getType() != expected) {
-			throw new Exception("ERROR: EXPECTED " + expected + " BUT FOUND " +
+			throw new Exception("SYNTAX ERROR: EXPECTED " + expected + " BUT FOUND " +
 					token.getValue() + " at line " + token.getLine());
 		}
 		tokenIndex++;
@@ -88,7 +88,7 @@ public class Parser {
 				if (localScope.defined(curToken.getValue())) {
 					yield new AtomNode(curToken);
 				} else {
-					throw new Exception("ERROR: UNDEFINED VARIABLE " +
+					throw new Exception("SYNTAX ERROR: UNDEFINED VARIABLE " +
 							curToken.getValue() + " at line " + curToken.getLine());
 				}
 			}
@@ -100,7 +100,7 @@ public class Parser {
 
 			case LESS, LESSEQ, GREATER, GREATEREQ, EQUAL, NONEQUAL -> parseComparison();
 
-			default -> throw new Exception("ERROR: UNEXPECTED TOKEN: " +
+			default -> throw new Exception("SYNTAX ERROR: UNEXPECTED TOKEN: " +
 					curToken.getValue() + " at line " + curToken.getLine());
 		};
 	}
@@ -129,7 +129,7 @@ public class Parser {
 			}
 
 			default -> throw new Exception(
-					"ERROR: invalid token in quoted form: " + t.getValue() + " at line: " + t.getLine()
+					"SYNTAX ERROR: invalid token in quoted form: " + t.getValue() + " at line: " + t.getLine()
 			);
 		}
 	}
@@ -141,7 +141,7 @@ public class Parser {
 			elements.add(parseQuoted());
 		}
 		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN QUOTED LIST");
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN QUOTED LIST");
 		}
 		consume(TokenType.RPAREN);
 		return new ListNode(elements);
@@ -187,7 +187,7 @@ public class Parser {
 				}
 
 				if (isAtEnd()) {
-					throw new Exception("ERROR: MISSING ')' IN CALL EXPRESSION");
+					throw new Exception("SYNTAX ERROR: MISSING ')' IN CALL EXPRESSION");
 				}
 
 				consume(TokenType.RPAREN);
@@ -200,19 +200,25 @@ public class Parser {
 			case "eval" -> parseEval();
 
 			default -> {
-				AstNode callee = parseNode();
-				ArrayList<AstNode> args = new ArrayList<>();
+				if (operatorToken.getType() == TokenType.ATOM
+						&& globalScope.defined(op)
+						&& globalScope.find(op).getType() == NodeType.FUNC) {
+					yield parseNamedFunctionCall();
+				} else {
+					AstNode callee = parseNode();
+					ArrayList<AstNode> args = new ArrayList<>();
 
-				while (!isAtEnd() && !check(TokenType.RPAREN)) {
-					args.add(parseNode());
+					while (!isAtEnd() && !check(TokenType.RPAREN)) {
+						args.add(parseNode());
+					}
+
+					if (isAtEnd()) {
+						throw new Exception("SYNTAX ERROR: MISSING ')' IN CALL EXPRESSION");
+					}
+
+					consume(TokenType.RPAREN);
+					yield new CallNode(callee, args);
 				}
-
-				if (isAtEnd()) {
-					throw new Exception("ERROR: MISSING ')' IN CALL EXPRESSION");
-				}
-
-				consume(TokenType.RPAREN);
-				yield new CallNode(callee, args);
 			}
 		};
 	}
@@ -248,20 +254,20 @@ public class Parser {
 			AstNode expr = parseNode();
 			if (expr.getType() == NodeType.LITERAL &&
 					(((LiteralNode) expr).getTokenType() == TokenType.BOOLEAN)) {
-				throw new Exception("ERROR: IMPOSSIBLE OPERATION at line: " + operatorToken.getLine());
+				throw new Exception("SYNTAX ERROR: IMPOSSIBLE OPERATION at line: " + operatorToken.getLine());
 			}
 			operands.add(expr);
 		}
 
 		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' AFTER OPERATION " + operator +
+			throw new Exception("SYNTAX ERROR: MISSING ')' AFTER OPERATION " + operator +
 					" at line: " + operatorToken.getLine());
 		}
 
 		consume(TokenType.RPAREN);
 
 		if (operands.size() != 2) {
-			throw new Exception("ERROR: IMPOSSIBLE OPERATION at line: " + operatorToken.getLine());
+			throw new Exception("SYNTAX ERROR: IMPOSSIBLE OPERATION at line: " + operatorToken.getLine());
 		}
 
 		return new OperationNode(operatorToken, operands);
@@ -275,7 +281,7 @@ public class Parser {
 		}
 
 		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN LIST");
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN LIST");
 		}
 
 		consume(TokenType.RPAREN);
@@ -313,7 +319,7 @@ public class Parser {
 			localScope.define(p, null);
 		}
 		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN PARAMETER LIST FOR FUNCTION " + functionName);
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN PARAMETER LIST FOR FUNCTION " + functionName);
 		}
 		consume(TokenType.RPAREN);
 
@@ -322,7 +328,7 @@ public class Parser {
 			bodyExprs.add(parseNode());
 		}
 		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN BODY OF FUNCTION " + functionName);
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN BODY OF FUNCTION " + functionName);
 		}
 		consume(TokenType.RPAREN);
 
@@ -365,7 +371,7 @@ public class Parser {
 			localScope.define(name, null);
 		}
 		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN PROG VAR LIST");
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN PROG VAR LIST");
 		}
 		consume(TokenType.RPAREN);
 
@@ -374,7 +380,7 @@ public class Parser {
 			statements.add(parseNode());
 		}
 		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN PROG BODY");
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN PROG BODY");
 		}
 		consume(TokenType.RPAREN);
 
@@ -411,7 +417,7 @@ public class Parser {
 			body.add(parseNode());
 		}
 		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN WHILE BODY");
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN WHILE BODY");
 		}
 		consume(TokenType.RPAREN);
 		return new WhileNode(condition, body);
@@ -435,7 +441,7 @@ public class Parser {
 		AstNode arg = parseNode();
 		consume(TokenType.RPAREN);
 		if (op == null) {
-			throw new Exception("ERROR: Expected predicate parameter"); //TODO Check on test case and delete maybe
+			throw new Exception("SYNTAX ERROR: Expected predicate parameter"); //TODO Check on test case and delete maybe
 		}
 		return new PredicateNode(op.getValue(), arg);
 	}
@@ -486,7 +492,7 @@ public class Parser {
 			localScope.define(p, null);
 		}
 		if (isAtEnd()) {
-			throw new Exception("ERROR: MISSING ')' IN LAMBDA PARAMETER LIST");
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN LAMBDA PARAMETER LIST");
 		}
 		consume(TokenType.RPAREN);
 
@@ -497,5 +503,49 @@ public class Parser {
 		localScope = prev;
 
 		return new LambdaNode(params, body);
+	}
+
+	private AstNode parseNamedFunctionCall() throws Exception {
+		Token nameToken = consume(TokenType.ATOM);
+		String functionName = nameToken.getValue();
+		int line = nameToken.getLine();
+
+		if (!globalScope.defined(functionName)) {
+			throw new Exception("SYNTAX ERROR: UNDEFINED FUNCTION " + functionName + " at line " + line);
+		}
+
+		AstNode fnNode = globalScope.find(functionName);
+		if (fnNode == null || fnNode.getType() != NodeType.FUNC) {
+			throw new Exception("SYNTAX ERROR: " + functionName + " IS NOT A FUNCTION at line: " + line);
+		}
+
+		FunctionNode functionNode = (FunctionNode) fnNode;
+
+		ArrayList<AstNode> args = new ArrayList<>();
+		while (!isAtEnd() && !check(TokenType.RPAREN)) {
+			args.add(parseNode());
+		}
+
+		if (isAtEnd()) {
+			throw new Exception("SYNTAX ERROR: MISSING ')' IN FUNCTION CALL " + functionName +
+					" at line: " + line);
+		}
+
+		int expectedParams = functionNode.getParameters() == null
+				? 0
+				: functionNode.getParameters().size();
+
+		if (args.size() != expectedParams) {
+			throw new Exception(
+					"SYNTAX ERROR: INCORRECT NUMBER OF PARAMETERS FOR FUNCTION " + functionName +
+							" EXPECTED-GOT: " + expectedParams + "-" + args.size() +
+							" at line: " + line
+			);
+		}
+
+		consume(TokenType.RPAREN);
+
+		AstNode callee = new AtomNode(nameToken);
+		return new CallNode(callee, args);
 	}
 }
