@@ -147,7 +147,7 @@ public class Interpreter {
 
 		Object condVal = visit(condition);
 		if (!(condVal instanceof Boolean)) {
-			throw new RuntimeException("ERROR: COND CONDITION IS NOT BOOLEAN");
+			throw new RuntimeException("INTERPRETATION ERROR: COND CONDITION IS NOT BOOLEAN");
 		}
 
 		if ((Boolean) condVal) {
@@ -376,7 +376,7 @@ public class Interpreter {
 
 		AstNode funcNode = symbolTable.find(funcName);
 		if (funcNode == null) {
-			throw new RuntimeException("ERROR: UNDEFINED FUNCTION " + funcName);
+			throw new RuntimeException("INTERPRETATION ERROR: UNDEFINED FUNCTION " + funcName);
 		}
 
 		ArrayList<String> paramNames;
