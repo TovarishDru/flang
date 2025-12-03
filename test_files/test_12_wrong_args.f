@@ -1,3 +1,5 @@
+(plus 1.2.4 5)
+
 (plus 1 '(sdfsdf dsfsdf))
 
 (minus 2 false)
@@ -15,5 +17,3 @@
 (head 5)
 
 (tail false)
-
-(plus 1.2.4 5)

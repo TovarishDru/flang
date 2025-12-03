@@ -4,4 +4,4 @@
 
 (times 2 (plus 5 (divide 6 3)))
 
-(equal 0 (cond (less 5 4) 1 0))
+(cond (less 5 4) 1 0)

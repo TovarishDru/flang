@@ -27,5 +27,3 @@
 (eval y)
 (setq expr '(plus -1.35 2.15))
 (eval expr)
-
-(eval '())

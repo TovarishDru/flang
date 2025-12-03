@@ -16,6 +16,8 @@
             (setq num (operation num))
         )
     )
+
+    num
 )
 
 (func square (num) (times num num))

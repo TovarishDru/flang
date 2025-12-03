@@ -6,6 +6,6 @@
 
 (head (tail '(n y n)))
 
-(head (cons 'h (cons 'nothead (cons 'nothead null))))
+(head (cons 'h (cons 'nothead (cons 'nothead '()))))
 
 (head '(h nothead nothead))

@@ -10,10 +10,5 @@ x
 )
 x
 
-(while (true)
-    (setq x 500)
-)
-x
-
 (lambda () (setq x 500))
 x

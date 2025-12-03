@@ -14,9 +14,6 @@
 
 (isatom 1)
 
-(setq a 5)
-(isatom a)
-
 (isbool 5)
 
 (islist '(123 sdf))
