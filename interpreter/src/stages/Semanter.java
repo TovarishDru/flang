@@ -19,7 +19,6 @@ public class Semanter {
     public AstNode optimize(AstNode root) {
         if (root == null) return null;
         root = constantFold(root);
-        root = simplifyConditionals(root);
         return root;
     }
 
@@ -294,15 +293,29 @@ public class Semanter {
         List<AstNode> kids = node.getChildren();
         if (kids != null) {
             for (int i = 0; i < kids.size(); i++) {
-                kids.set(i, constantFold(kids.get(i)));
+                kids.set(i, constantFold(kids.get(i))); // сначала оптимизируем детей
             }
         }
 
         NodeType kind = node.getType();
         Optional<AstNode> optResult = Optional.empty();
 
+        if (kind == NodeType.COND && kids != null && !kids.isEmpty()) {
+            Boolean cond = asBoolLiteral(kids.get(0));
+            AstNode thenB  = kids.size() >= 2 ? kids.get(1) : null;
+            AstNode elseB  = kids.size() >= 3 ? kids.get(2) : null;
+
+            if (Boolean.TRUE.equals(cond) && thenB != null) {
+                optResult = Optional.of(thenB);
+            } else if (Boolean.FALSE.equals(cond)) {
+                if (elseB != null) {
+                    optResult = Optional.of(elseB);
+                }
+            }
+        }
+
         // unary NOT
-        if (kind == NodeType.NOT && kids != null && kids.size() == 1) {
+        else if (kind == NodeType.NOT && kids != null && kids.size() == 1) {
             Boolean b = asBoolLiteral(kids.get(0));
             if (b != null) optResult = Optional.of(makeBoolLiteral(!b));
         }
@@ -375,31 +388,6 @@ public class Semanter {
             return optResult.get();
         }
 
-        return node;
-    }
-
-    private AstNode simplifyConditionals(AstNode node) {
-        if (node == null) return null;
-
-        List<AstNode> kids = node.getChildren();
-        if (kids != null) {
-            for (int i = 0; i < kids.size(); i++) {
-                kids.set(i, simplifyConditionals(kids.get(i)));
-            }
-        }
-
-        if (node.getType() == NodeType.COND && kids != null && !kids.isEmpty()) {
-            // assume [cond, thenBranch, elseBranch?]
-            Boolean cond = asBoolLiteral(kids.get(0));
-            AstNode thenB = kids.size() >= 2 ? kids.get(1) : null;
-            AstNode elseB = kids.size() >= 3 ? kids.get(2) : null;
-
-            if (Boolean.TRUE.equals(cond) && thenB != null) return thenB;
-            if (Boolean.FALSE.equals(cond)) {
-                if (elseB != null) return elseB;
-                // no else -> drop whole cond (or return an explicit empty node if you have one)
-            }
-        }
         return node;
     }
 
