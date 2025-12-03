@@ -17,3 +17,6 @@
 (isbool 5)
 
 (islist '(123 sdf))
+
+(setq a 5)
+(isatom a)
