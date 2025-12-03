@@ -419,15 +419,19 @@ public class Parser {
 		// while ( <condition> ) <body...>
 		AstNode condition = parseNode();
 
+		SymbolTable prev = localScope;
+		localScope = new SymbolTable(prev);
 		ArrayList<AstNode> body = new ArrayList<>();
 		while (!isAtEnd() && !check(TokenType.RPAREN)) {
 			body.add(parseNode());
 		}
 		if (isAtEnd()) {
+			localScope = prev;
 			throw new Exception("SYNTAX ERROR: MISSING ')' IN WHILE BODY");
 		}
 		consume(TokenType.RPAREN);
 
+		localScope = prev;
 		return new WhileNode(condition, body);
 	}
 
